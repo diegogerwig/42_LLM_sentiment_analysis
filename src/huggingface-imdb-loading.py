@@ -1,9 +1,18 @@
-# Add this to your imports
 from datasets import load_dataset
+import pandas as pd
+
 
 def load_imdb_dataset(max_samples=10000):
     # Load the IMDB dataset
     dataset = load_dataset("imdb")
+
+    # Print the dataset statistics
+    print(dataset)
+
+    # Save the dataset to a CSV file
+    for split, dataset in dataset.items():
+        df = pd.DataFrame(dataset)
+        df.to_csv(f'{split}.csv', index=False)
     
     # Combine train and test sets
     all_data = dataset['train'].shuffle(seed=42)
