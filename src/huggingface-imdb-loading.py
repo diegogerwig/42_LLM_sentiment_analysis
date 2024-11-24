@@ -29,6 +29,10 @@ def load_imdb_dataset(max_samples=10000):
     
     return train_texts, val_texts, train_labels, val_labels
 
+
+
+
+
 # Usage
 train_texts, val_texts, train_labels, val_labels = load_imdb_dataset()
 
