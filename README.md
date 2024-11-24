@@ -1,4 +1,5 @@
 # Transfer Learning in Sentiment Analysis - 42 Urduliz AI Project
+Author: [Juan Carlos Cordon](https://github.com/jcdata42/transfer_learning_project)
 
 ## Project Overview
 
@@ -44,5 +45,7 @@ By completing this project, students will:
 - Explore multiple tokenization techniques and compare their performance.
 - Deploy the trained model to the web, allowing real-time sentiment predictions via a user interface.
 
+---
+---
 
-Author: [Juan Carlos Cordon](https://github.com/jcdata42/transfer_learning_project)
+
