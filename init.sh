@@ -12,20 +12,15 @@ activate_venv() {
     fi
 }
 
-run_model() {
-    MODEL_PID=$(pgrep -f "python.*sentiment_analysis.py" || echo "")
+setup_jupyter() {
+    pip install jupyter notebook
+    python -m ipykernel install --user --name=llm_venv
+    echo "🔰 Jupyter configured with virtual environment kernel"
+}
 
-    if [ ! -z "$MODEL_PID" ]; then
-        echo "🔄 Stopping existing model process (PID: $MODEL_PID)..."
-        kill -9 $MODEL_PID
-    fi
-
-    echo "🚀 Starting sentiment analysis model..."
-    export PYTHONPATH=$(pwd):$PYTHONPATH
-    
-    cd src
-    python sentiment_analysis.py
-    cd ..
+run_jupyter() {
+    echo "🚀 Starting Jupyter Notebook..."
+    jupyter notebook
 }
 
 full_init() {
@@ -37,17 +32,17 @@ full_init() {
     # Create new virtual environment
     python3 -m venv ~/sgoinfre/llm_venv
     activate_venv
-   
+    
     echo "📦 Installing requirements..."
     pip install -r requirements.txt
-
-    run_model
+    
+    setup_jupyter
 }
 
 case "$1" in
     -run)
         activate_venv
-        run_model
+        run_jupyter
         ;;
     "")
         full_init
@@ -56,7 +51,7 @@ case "$1" in
         echo "❌ Invalid argument: $1"
         echo "Usage: source $0 [-run]"
         echo "  no args : Full initialization"
-        echo "  -run    : Just activate venv and run model"
-        return 1  
+        echo "  -run    : Activate venv and run Jupyter"
+        return 1
         ;;
 esac
