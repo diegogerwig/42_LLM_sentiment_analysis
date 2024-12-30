@@ -1,8 +1,8 @@
 import streamlit as st
-from transformers import pipeline
-import pandas as pd
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 from dotenv import load_dotenv
 import os
+import pandas as pd
 
 # Load environment variables
 load_dotenv()
@@ -21,13 +21,26 @@ st.set_page_config(
 
 @st.cache_resource
 def load_model():
-    """Loads model from Hugging Face Hub"""
-    return pipeline(
-        "sentiment-analysis",
-        model="dgerwig/sentiment-analysis", 
-        tokenizer="dgerwig/sentiment-analysis",
-        token=HF_TOKEN
-    )
+    """Loads model from local path"""
+    try:
+        model_path = "./models/sentiment_model"
+        
+        # Cargar el modelo y tokenizer localmente
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_path,
+            local_files_only=True,
+            use_safetensors=True
+        )
+        
+        return pipeline(
+            "sentiment-analysis",
+            model=model,
+            tokenizer=tokenizer
+        )
+    except Exception as e:
+        st.error(f"Error loading model: {str(e)}")
+        raise e
 
 def main():
     # Title and description

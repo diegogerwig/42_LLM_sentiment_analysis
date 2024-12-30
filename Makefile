@@ -1,10 +1,9 @@
-# Project structure
 PYTHON := python3
 PIP := pip
 SRC_DIR := ./src
 MODEL_DIR := ./models/sentiment_model
 DATA_DIR := ./data
-VENV := .venv
+VENV := $(HOME)/.venvs/sentiment_analysis
 VENV_BIN := $(VENV)/bin
 ENV_FILE := .env
 
@@ -28,9 +27,12 @@ setup:
 	mkdir -p $(MODEL_DIR)
 	mkdir -p $(DATA_DIR)
 	@echo "Setting up virtual environment..."
+	mkdir -p $(HOME)/.venvs  
 	$(PYTHON) -m venv $(VENV)
 	$(VENV_BIN)/pip install --upgrade pip
 	$(VENV_BIN)/pip install -r requirements.txt
+	@echo "Verifying critical dependencies..."
+	$(VENV_BIN)/pip install python-dotenv streamlit transformers torch --no-deps
 	@if [ ! -f $(ENV_FILE) ]; then \
 		echo "Creating template .env file..."; \
 		echo "HF_TOKEN=your-token-here" > $(ENV_FILE); \
@@ -72,6 +74,6 @@ requirements:
 	@echo "numpy" >> requirements.txt
 	@echo "tqdm" >> requirements.txt
 
-deploy: upload run
+deploy: setup upload run
 
 .PHONY: setup train upload run clean help check-env deploy
