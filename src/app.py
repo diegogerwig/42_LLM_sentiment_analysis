@@ -267,6 +267,24 @@ def display_token_analysis(token_analysis, total_tokens, attribution_scores=None
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        overflow: hidden;
+    """
+    
+    heading_style = """
+        margin: 0;
+        color: #444;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+    """
+    
+    value_style = """
+        margin: 0.5rem 0;
+        font-size: 1.8rem;
+        font-weight: bold;
+        line-height: 1;
     """
     
     # Create four columns for statistics
@@ -276,8 +294,8 @@ def display_token_analysis(token_analysis, total_tokens, attribution_scores=None
     col1.markdown(
         f"""
         <div style='{card_style}'>
-        <h4 style='margin: 0; color: #444;'>Total Tokens</h4>
-        <h2 style='margin: 0.5rem 0; color: #0066cc;'>{total_tokens}</h2>
+        <h4 style='{heading_style}'>Total Tokens</h4>
+        <div style='{value_style} color: #0066cc;'>{total_tokens}</div>
         </div>
         """,
         unsafe_allow_html=True
@@ -287,8 +305,8 @@ def display_token_analysis(token_analysis, total_tokens, attribution_scores=None
     col2.markdown(
         f"""
         <div style='{card_style}'>
-        <h4 style='margin: 0; color: #444;'>Full Words</h4>
-        <h2 style='margin: 0.5rem 0; color: #28a745;'>{regular}</h2>
+        <h4 style='{heading_style}'>Full Words</h4>
+        <div style='{value_style} color: #28a745;'>{regular}</div>
         <small style='color: #666;'>({(regular/total*100):.1f}%)</small>
         </div>
         """,
@@ -299,8 +317,8 @@ def display_token_analysis(token_analysis, total_tokens, attribution_scores=None
     col3.markdown(
         f"""
         <div style='{card_style}'>
-        <h4 style='margin: 0; color: #444;'>Subwords</h4>
-        <h2 style='margin: 0.5rem 0; color: #fd7e14;'>{subwords}</h2>
+        <h4 style='{heading_style}'>Subwords</h4>
+        <div style='{value_style} color: #fd7e14;'>{subwords}</div>
         <small style='color: #666;'>({(subwords/total*100):.1f}%)</small>
         </div>
         """,
@@ -311,8 +329,8 @@ def display_token_analysis(token_analysis, total_tokens, attribution_scores=None
     col4.markdown(
         f"""
         <div style='{card_style}'>
-        <h4 style='margin: 0; color: #444;'>Special Tokens</h4>
-        <h2 style='margin: 0.5rem 0; color: #6c757d;'>{special}</h2>
+        <h4 style='{heading_style}'>Special Tokens</h4>
+        <div style='{value_style} color: #6c757d;'>{special}</div>
         <small style='color: #666;'>({(special/total*100):.1f}%)</small>
         </div>
         """,
@@ -448,26 +466,29 @@ def render_sidebar():
         # Custom CSS for the buttons
         st.markdown("""
         <style>
-        /* Positive button style */
-        .stButton > button[kind="secondary"]:first-child[data-testid*="positive"] {
-            background-color: rgba(40, 167, 69, 0.2);
-            border-color: rgba(40, 167, 69, 0.4);
+        div[data-testid="stButton"] > button {
             width: 100%;
-        }
-        .stButton > button[kind="secondary"]:hover:first-child[data-testid*="positive"] {
-            background-color: rgba(40, 167, 69, 0.3);
-            border-color: rgba(40, 167, 69, 0.5);
+            margin-bottom: 8px;
         }
         
-        /* Negative button style */
-        .stButton > button[kind="secondary"]:first-child[data-testid*="negative"] {
-            background-color: rgba(220, 53, 69, 0.2);
-            border-color: rgba(220, 53, 69, 0.4);
-            width: 100%;
+        div[data-testid="stButton"] > button[data-testid*="positive"] {
+            background-color: rgba(40, 167, 69, 0.2);
+            border: 1px solid rgba(40, 167, 69, 0.4);
         }
-        .stButton > button[kind="secondary"]:hover:first-child[data-testid*="negative"] {
+        
+        div[data-testid="stButton"] > button[data-testid*="positive"]:hover {
+            background-color: rgba(40, 167, 69, 0.3);
+            border: 1px solid rgba(40, 167, 69, 0.5);
+        }
+        
+        div[data-testid="stButton"] > button[data-testid*="negative"] {
+            background-color: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.4);
+        }
+        
+        div[data-testid="stButton"] > button[data-testid*="negative"]:hover {
             background-color: rgba(220, 53, 69, 0.3);
-            border-color: rgba(220, 53, 69, 0.5);
+            border: 1px solid rgba(220, 53, 69, 0.5);
         }
         </style>
         """, unsafe_allow_html=True)
