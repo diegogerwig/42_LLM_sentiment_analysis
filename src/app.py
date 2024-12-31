@@ -534,7 +534,8 @@ def main():
         st.markdown("""
         <style>
             .stTextArea textarea {
-                font-size: 1.2rem;
+                font-size: 1.2
+                +rem;
                 line-height: 1.4;
             }
         </style>
