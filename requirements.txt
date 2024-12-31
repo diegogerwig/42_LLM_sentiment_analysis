@@ -3,3 +3,4 @@ torch>=2.0.0
 transformers>=4.30.0
 huggingface-hub>=0.16.4
 streamlit>=1.24.0
+plotly>=5.1.0
