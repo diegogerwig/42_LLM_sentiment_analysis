@@ -39,6 +39,65 @@ EXAMPLE_REVIEWS = {
     """
 }
 
+def calculate_background_color(confidence):
+    """Calculates background color based on confidence value"""
+    # Convert confidence to percentage
+    conf_pct = confidence * 100
+    
+    if conf_pct >= 99.9:  # Effectively 100%
+        return "#28a745"  # Green
+    elif conf_pct <= 50:
+        return "#ffc107"  # Yellow
+    else:
+        # Calculate color between yellow and green
+        ratio = (conf_pct - 50) / 50  # 0 to 1
+        # Interpolate between yellow (255, 193, 7) and green (40, 167, 69)
+        r = int(255 - (255 - 40) * ratio)
+        g = int(193 + (167 - 193) * ratio)
+        b = int(7 + (69 - 7) * ratio)
+        return f"rgb({r}, {g}, {b})"
+
+def display_sentiment(sentiment, confidence):
+    """Displays the sentiment analysis results"""
+    col1, col2 = st.columns(2)
+    
+    # Common style for both boxes
+    box_height = "100px"
+    
+    # Sentiment display
+    sentiment_color = "#28a745" if sentiment == "POSITIVE" else "#dc3545"
+    col1.markdown(
+        f"""
+        <div style='padding: 1rem; border-radius: 0.5rem; 
+        background-color: {sentiment_color}; color: white; 
+        text-align: center; height: {box_height}; 
+        display: flex; align-items: center; justify-content: center;'>
+        <h2 style='margin: 0; font-size: 2.5rem;'>{sentiment}</h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Confidence display with dynamic background color
+    confidence_pct = confidence * 100
+    bg_color = calculate_background_color(confidence)
+    text_color = "#000000" if confidence <= 0.5 else "#ffffff"
+    
+    col2.markdown(
+        f"""
+        <div style='padding: 1rem; border-radius: 0.5rem; 
+        background-color: {bg_color}; text-align: center;
+        height: {box_height}; display: flex; 
+        align-items: center; justify-content: center;'>
+        <div style='text-align: center;'>
+            <span style='color: {text_color}; font-size: 2.5rem;'>{confidence_pct:.1f}% </span>
+            <span style='color: {text_color}; font-size: 1.5rem;'>confidence</span>
+        </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 def init_session_state():
     """Initialize session state variables"""
     if 'text_input' not in st.session_state:
@@ -94,37 +153,277 @@ def predict_sentiment(model, text_input, tokenizer):
         st.error(f"Error in sentiment prediction: {str(e)}")
         return None
 
+def calculate_token_attributions(model, tokenizer, text, result):
+    """Calculate the attribution of each token to the prediction using integrated gradients"""
+    try:
+        # Tokenize input
+        encoded = tokenizer.encode_plus(
+            text,
+            add_special_tokens=True,
+            return_tensors='pt',
+            return_attention_mask=True
+        )
+        
+        # Set model to evaluation mode
+        model.eval()
+        
+        # Get model outputs for attribution
+        with torch.no_grad():
+            outputs = model(**encoded)
+            predicted_class = outputs.logits.argmax(dim=1).item()
+        
+        # Function to get embedding output
+        def get_embedding_output(input_ids):
+            return model.distilbert.embeddings.word_embeddings(input_ids)
+        
+        # Get original embeddings
+        embeddings = get_embedding_output(encoded['input_ids'])
+        
+        # Calculate attributions using input x gradient
+        embeddings.retain_grad()
+        model.zero_grad()
+        
+        # Forward pass with gradient calculation
+        outputs = model(inputs_embeds=embeddings, attention_mask=encoded['attention_mask'])
+        
+        # Get score for predicted class
+        score = outputs.logits[:, predicted_class]
+        
+        # Backward pass
+        score.backward()
+        
+        # Get gradients and calculate attribution scores
+        gradients = embeddings.grad
+        attributions = (gradients * embeddings).sum(dim=-1)
+        
+        # Normalize attribution scores
+        attribution_scores = torch.abs(attributions[0])
+        if torch.max(attribution_scores) > 0:
+            attribution_scores = attribution_scores / torch.max(attribution_scores)
+        
+        return attribution_scores.tolist()
+    except Exception as e:
+        st.error(f"Error calculating attributions: {str(e)}")
+        return None
+
 def analyze_tokens(text, tokenizer):
     """Analyzes the tokens in the text"""
     try:
         # Basic text preprocessing
         text = text.strip()
         
-        # Get original tokens and input IDs
-        tokens = tokenizer.tokenize(text)
-        input_ids = tokenizer.encode(text)
+        # Get tokens and their IDs
+        encoded = tokenizer.encode_plus(
+            text,
+            add_special_tokens=True,
+            return_tensors='pt'
+        )
+        
+        # Get full list of tokens including special tokens
+        full_tokens = tokenizer.convert_ids_to_tokens(encoded['input_ids'][0])
         
         # Get vocabulary
         vocab = tokenizer.get_vocab()
         
         # Analyze each token
         token_analysis = []
-        for i, token in enumerate(tokens):
-            # Get original word from position in text (if possible)
-            token_clean = token.replace('##', '')
-            
+        for i, token in enumerate(full_tokens):
+            token_id = encoded['input_ids'][0][i].item()
             token_data = {
                 'token': token,
                 'is_special': token.startswith('['),
                 'is_subword': token.startswith('##'),
-                'token_id': vocab.get(token, None)
+                'token_id': token_id
             }
             token_analysis.append(token_data)
         
-        return token_analysis, len(input_ids)
+        return token_analysis, len(full_tokens)
     except Exception as e:
         st.error(f"Error in token analysis: {str(e)}")
         return [], 0
+
+def display_token_analysis(token_analysis, total_tokens, attribution_scores=None):
+    """Displays the token analysis results"""
+    if not token_analysis:
+        return
+    
+    # Count token types
+    subwords = sum(1 for t in token_analysis if t['is_subword'])
+    special = sum(1 for t in token_analysis if t['is_special'])
+    regular = len(token_analysis) - subwords - special
+    total = len(token_analysis)
+
+    # Display token statistics in cards with consistent styling
+    st.markdown("### Token Analysis")
+    
+    # Common style for all stat cards
+    card_style = """
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        text-align: center;
+        height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    """
+    
+    # Create four columns for statistics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    # Total tokens card
+    col1.markdown(
+        f"""
+        <div style='{card_style}'>
+        <h4 style='margin: 0; color: #444;'>Total Tokens</h4>
+        <h2 style='margin: 0.5rem 0; color: #0066cc;'>{total_tokens}</h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Regular words card
+    col2.markdown(
+        f"""
+        <div style='{card_style}'>
+        <h4 style='margin: 0; color: #444;'>Full Words</h4>
+        <h2 style='margin: 0.5rem 0; color: #28a745;'>{regular}</h2>
+        <small style='color: #666;'>({(regular/total*100):.1f}%)</small>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Subwords card
+    col3.markdown(
+        f"""
+        <div style='{card_style}'>
+        <h4 style='margin: 0; color: #444;'>Subwords</h4>
+        <h2 style='margin: 0.5rem 0; color: #fd7e14;'>{subwords}</h2>
+        <small style='color: #666;'>({(subwords/total*100):.1f}%)</small>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Special tokens card
+    col4.markdown(
+        f"""
+        <div style='{card_style}'>
+        <h4 style='margin: 0; color: #444;'>Special Tokens</h4>
+        <h2 style='margin: 0.5rem 0; color: #6c757d;'>{special}</h2>
+        <small style='color: #666;'>({(special/total*100):.1f}%)</small>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Display token details with attributions
+    st.markdown("### Token Details")
+    
+    token_data = []
+    has_attributions = attribution_scores is not None
+    
+    # Prepare data
+    for i, t in enumerate(token_analysis):
+        token_type = "Special" if t['is_special'] else "Subword" if t['is_subword'] else "Word"
+        attribution = attribution_scores[i] if has_attributions else 0
+        
+        entry = {
+            "#": i + 1,
+            "Token": t['token'],
+            "Type": token_type,
+            "ID": t['token_id']
+        }
+        
+        if has_attributions:
+            entry["Influence"] = attribution
+            
+        token_data.append(entry)
+    
+    # Configure columns with better widths
+    column_config = {
+        "#": st.column_config.NumberColumn(
+            "#",
+            help="Position in text",
+            width=60
+        ),
+        "Token": st.column_config.TextColumn(
+            "Token",
+            help="The actual token",
+            width=200
+        ),
+        "Type": st.column_config.TextColumn(
+            "Type",
+            help="Token type (Word/Subword/Special)",
+            width=100
+        ),
+        "ID": st.column_config.NumberColumn(
+            "Token ID",
+            help="ID in model's vocabulary",
+            width=100
+        )
+    }
+    
+    if has_attributions:
+        column_config["Influence"] = st.column_config.NumberColumn(
+            "Influence",
+            help="Impact on prediction (higher = stronger influence)",
+            width=120,
+            format="%.3f"
+        )
+        
+        # Sort by influence if available
+        token_data.sort(key=lambda x: x['Influence'], reverse=True)
+    
+    # Display the dataframe with fixed width
+    st.dataframe(
+        token_data,
+        column_config=column_config,
+        hide_index=True,
+        width=800,
+        height=400
+    )
+    
+    if has_attributions:
+        # Display influential tokens in two columns
+        st.markdown("### Token Influence Analysis")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### Most Influential Tokens")
+            for entry in token_data[:5]:
+                influence = entry['Influence']
+                token = entry['Token']
+                st.markdown(
+                    f"""
+                    <div style='background-color: rgba(40, 167, 69, 0.1); padding: 0.5rem; 
+                    border-radius: 0.3rem; border: 1px solid rgba(40, 167, 69, 0.2); 
+                    margin-bottom: 0.5rem;'>
+                    <div style='font-size: 1.1rem; color: #28a745;'>{token}</div>
+                    <div style='color: #666; font-size: 0.9rem;'>Score: {influence:.3f}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        
+        with col2:
+            st.markdown("#### Least Influential Tokens")
+            for entry in sorted(token_data, key=lambda x: x['Influence'])[:5]:
+                influence = entry['Influence']
+                token = entry['Token']
+                st.markdown(
+                    f"""
+                    <div style='background-color: rgba(108, 117, 125, 0.1); padding: 0.5rem; 
+                    border-radius: 0.3rem; border: 1px solid rgba(108, 117, 125, 0.2); 
+                    margin-bottom: 0.5rem;'>
+                    <div style='font-size: 1.1rem; color: #6c757d;'>{token}</div>
+                    <div style='color: #666; font-size: 0.9rem;'>Score: {influence:.3f}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
 def render_sidebar():
     """Renders the sidebar content"""
@@ -140,113 +439,53 @@ def render_sidebar():
         ### 🔍 Features
         - Real-time sentiment analysis
         - Token visualization
-        - Vocabulary verification
+        - Token influence analysis
         """)
         
         st.markdown("### 📊 Example Reviews")
         st.write("Click any example to try it:")
+
+        # Custom CSS for the buttons
+        st.markdown("""
+        <style>
+        /* Positive button style */
+        .stButton > button[kind="secondary"]:first-child[data-testid*="positive"] {
+            background-color: rgba(40, 167, 69, 0.2);
+            border-color: rgba(40, 167, 69, 0.4);
+            width: 100%;
+        }
+        .stButton > button[kind="secondary"]:hover:first-child[data-testid*="positive"] {
+            background-color: rgba(40, 167, 69, 0.3);
+            border-color: rgba(40, 167, 69, 0.5);
+        }
         
+        /* Negative button style */
+        .stButton > button[kind="secondary"]:first-child[data-testid*="negative"] {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-color: rgba(220, 53, 69, 0.4);
+            width: 100%;
+        }
+        .stButton > button[kind="secondary"]:hover:first-child[data-testid*="negative"] {
+            background-color: rgba(220, 53, 69, 0.3);
+            border-color: rgba(220, 53, 69, 0.5);
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Group examples by sentiment
+        st.markdown("##### Positive Examples:")
         for title, text in EXAMPLE_REVIEWS.items():
-            if st.button(title, key=f"btn_{title}"):
-                st.session_state.text_input = text.strip()
-                st.session_state.analyze_clicked = True
-
-def display_sentiment(sentiment, confidence):
-    """Displays the sentiment analysis results"""
-    col1, col2 = st.columns(2)
-    
-    # Common style for both boxes
-    box_height = "120px"
-    
-    # Sentiment display
-    sentiment_color = "#28a745" if sentiment == "POSITIVE" else "#dc3545"
-    col1.markdown(
-        f"""
-        <div style='padding: 1rem; border-radius: 0.5rem; 
-        background-color: {sentiment_color}; color: white; 
-        text-align: center; height: {box_height}; 
-        display: flex; align-items: center; justify-content: center;'>
-        <h2 style='margin: 0; font-size: 2.5rem;'>{sentiment}</h2>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    # Confidence display with matching height
-    confidence_pct = confidence * 100
-    confidence_color = "#0066cc"
-    col2.markdown(
-        f"""
-        <div style='padding: 1rem; border-radius: 0.5rem; 
-        background-color: #f8f9fa; text-align: center;
-        height: {box_height}; display: flex; flex-direction: column; 
-        align-items: center; justify-content: center;'>
-        <h4 style='margin: 0; color: {confidence_color};'>Confidence</h4>
-        <h2 style='margin: 0.5rem 0; color: {confidence_color}; font-size: 2.5rem;'>
-            {confidence_pct:.1f}%
-        </h2>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-def display_token_analysis(token_analysis, total_tokens):
-    """Displays the token analysis results"""
-    if not token_analysis:
-        return
-    
-    # Count token types
-    subwords = sum(1 for t in token_analysis if t['is_subword'])
-    special = sum(1 for t in token_analysis if t['is_special'])
-    regular = len(token_analysis) - subwords - special
-    
-    # Display main token info
-    st.markdown(f"### Token Analysis (Total Length: {total_tokens} tokens)")
-    
-    # Token composition as a simple bar
-    st.markdown("#### Token Composition:")
-    total = len(token_analysis)
-    reg_pct = (regular / total) * 100
-    sub_pct = (subwords / total) * 100
-    spe_pct = (special / total) * 100
-    
-    st.markdown(f"""
-    - Full Words: {regular} ({reg_pct:.1f}%)
-    - Subwords: {subwords} ({sub_pct:.1f}%)
-    - Special Tokens: {special} ({spe_pct:.1f}%)
-    """)
-    
-    # Display token details in a compact table
-    st.markdown("#### Token Details:")
-    col1, col2 = st.columns([2, 3])
-    with col1:
-        token_data = []
-        for i, t in enumerate(token_analysis, 1):
-            token_type = "Special" if t['is_special'] else "Subword" if t['is_subword'] else "Word"
-            token_data.append({
-                "#": i,
-                "Token": t['token'],
-                "Type": token_type
-            })
+            if "Positive" in title:
+                if st.button(title, key=f"btn_positive_{title}", help="Click to load this positive example"):
+                    st.session_state.text_input = text.strip()
+                    st.session_state.analyze_clicked = True
         
-        st.dataframe(
-            token_data,
-            column_config={
-                "#": st.column_config.NumberColumn(
-                    "#",
-                    width="small",
-                ),
-                "Token": st.column_config.TextColumn(
-                    "Token",
-                    width="medium"
-                ),
-                "Type": st.column_config.TextColumn(
-                    "Type",
-                    width="small"
-                )
-            },
-            hide_index=True
-        )
+        st.markdown("##### Negative Examples:")
+        for title, text in EXAMPLE_REVIEWS.items():
+            if "Negative" in title:
+                if st.button(title, key=f"btn_negative_{title}", help="Click to load this negative example"):
+                    st.session_state.text_input = text.strip()
+                    st.session_state.analyze_clicked = True
 
 def main():
     st.set_page_config(page_title="Sentiment Analysis", page_icon="🎭", layout="wide")
@@ -260,17 +499,16 @@ def main():
         st.title("Sentiment Analysis")
         st.write("Enter your text below to analyze its sentiment.")
         
-        # Text input area with larger font
+        # Text input area
         text_input = st.text_area(
             "Enter text to analyze:",
             value=st.session_state.text_input,
             max_chars=15000,
             height=200,
             key="text_area",
-            on_change=lambda: setattr(st.session_state, 'analyze_clicked', True),
-            help="Write or paste your text here and press Analyze or Ctrl+Enter"
+            on_change=lambda: setattr(st.session_state, 'analyze_clicked', True)
         )
-
+        
         # Apply custom CSS to increase font size
         st.markdown("""
         <style>
@@ -293,10 +531,13 @@ def main():
                     st.markdown("## Results")
                     display_sentiment(result["label"], result["score"])
                     
+                    # Calculate token attributions
+                    attribution_scores = calculate_token_attributions(model, tokenizer, text_input, result)
+                    
                     # Token Analysis
                     token_analysis, total_tokens = analyze_tokens(text_input, tokenizer)
                     if token_analysis:
-                        display_token_analysis(token_analysis, total_tokens)
+                        display_token_analysis(token_analysis, total_tokens, attribution_scores)
     
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
