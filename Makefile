@@ -49,7 +49,7 @@ upload: check-env
 
 run: check-env
 	@echo "Starting Streamlit app..."
-	$(VENV_BIN)/streamlit run $(SRC_DIR)/app.py
+	$(VENV_BIN)/streamlit run $(SRC_DIR)/app_main.py
 
 clean:
 	@echo "Cleaning up..."
