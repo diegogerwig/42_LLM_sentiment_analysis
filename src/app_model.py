@@ -4,23 +4,35 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import streamlit as st
-from app_config import MODEL_PATH, MAX_LENGTH
+import os
+
+# Constants
+LOCAL_MODEL_PATH = "./models/sentiment_model"
+HF_MODEL_PATH = "dgerwig/sentiment-analysis"
+MAX_LENGTH = 512
 
 @st.cache_resource
 def load_model():
-    """Loads the model and tokenizer"""
+    """Loads the model and tokenizer based on environment"""
     try:
+        # Determine if running on Streamlit Cloud
+        is_streamlit_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
+        model_path = HF_MODEL_PATH if is_streamlit_cloud else LOCAL_MODEL_PATH
+        
+        print(f"Loading model from: {model_path}")
+        
         tokenizer = AutoTokenizer.from_pretrained(
-            MODEL_PATH,
+            model_path,
             trust_remote_code=True
         )
         
         model = AutoModelForSequenceClassification.from_pretrained(
-            MODEL_PATH,
-            local_files_only=True,
+            model_path,
             use_safetensors=True,
             trust_remote_code=True,
-            torch_dtype=torch.float32
+            torch_dtype=torch.float32,
+            # Only use local_files_only when running locally
+            local_files_only=not is_streamlit_cloud
         )
         
         return model, tokenizer

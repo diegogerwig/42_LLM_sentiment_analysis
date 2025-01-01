@@ -1,4 +1,5 @@
 # app_config.py
+import os
 
 # Example reviews for demonstration
 EXAMPLE_REVIEWS = {
@@ -23,7 +24,9 @@ EXAMPLE_REVIEWS = {
 }
 
 # Model configuration
-MODEL_PATH = "./models/sentiment_model"
+LOCAL_MODEL_PATH = "./models/sentiment_model"
+HF_MODEL_PATH = "dgerwig/sentiment-analysis"
+MODEL_PATH = HF_MODEL_PATH if os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud' else LOCAL_MODEL_PATH
 MAX_LENGTH = 512
 
 # UI Configuration

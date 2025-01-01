@@ -105,12 +105,12 @@ def display_token_analysis(token_analysis, total_tokens, attribution_scores=None
     for col, title, value, color, percentage in stats:
         col.markdown(
             f"""
-            <div style='background-color: #ccc; padding: 1rem; border-radius: 0.5rem;
+            <div style='background-color: #ccc; padding: 0.75rem; border-radius: 0.5rem;
             text-align: center; height: 120px; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;'>
-                <h3 style='margin-top: 2; color: {color}; font-size: 1.2rem;'>{title}</h3>
-                <div style='margin: 0.5rem 0; font-size: 1.8rem; color: {color};'>{value}</div>
-                <div style='margin-bottom: 1rem;'>
+            justify-content: space-between; align-items: center;'>
+                <h3 style='margin: 0; padding: 0; color: {color}; font-size: 1.3rem;'>{title}</h3>
+                <div style='margin: 0; padding: 0; font-size: 1.6rem; color: {color};'>{value}</div>
+                <div style='margin: 0; padding: 0;'>
                     {f"<small style='color: #444;'>({percentage*100:.1f}%)</small>" if percentage is not None else ""}
                 </div>
             </div>
