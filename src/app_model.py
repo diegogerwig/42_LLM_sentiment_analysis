@@ -87,3 +87,49 @@ def calculate_token_attributions(model, tokenizer, text):
     except Exception as e:
         st.error(f"Error calculating attributions: {str(e)}")
         return None
+
+def get_model_info(model, tokenizer):
+    """Gets comprehensive information about the model and tokenizer"""
+    try:
+        model_info = {
+            # Architecture Information
+            "Model Type": model.config.model_type,
+            "Base Model": model.config._name_or_path,
+            "Hidden Size": model.config.hidden_size,
+            "Number of Hidden Layers": model.config.num_hidden_layers,
+            "Number of Attention Heads": model.config.num_attention_heads,
+            "Max Position Embeddings": model.config.max_position_embeddings,
+            
+            # Model Parameters
+            "Number of Parameters": sum(p.numel() for p in model.parameters()),
+            "Trainable Parameters": sum(p.numel() for p in model.parameters() if p.requires_grad),
+            
+            # Model Configuration
+            "Vocabulary Size": model.config.vocab_size,
+            "Activation Function": getattr(model.config, "activation", "gelu"),
+            "Problem Type": getattr(model.config, "problem_type", "Not specified"),
+            "Number of Labels": model.config.num_labels,
+            
+            # Tokenizer Information
+            "Tokenizer Type": type(tokenizer).__name__,
+            "Vocabulary Size (Tokenizer)": len(tokenizer),
+            "Model Max Length": tokenizer.model_max_length,
+            "Padding Token": tokenizer.pad_token,
+            "Unknown Token": tokenizer.unk_token,
+            "Special Tokens": {}
+        }
+        
+        # Get special tokens map
+        if hasattr(tokenizer, 'special_tokens_map'):
+            special_tokens = {}
+            for key, value in tokenizer.special_tokens_map.items():
+                if isinstance(value, str):
+                    special_tokens[key] = value
+                elif isinstance(value, list):
+                    special_tokens[key] = ', '.join(value)
+            model_info["Special Tokens"] = special_tokens
+        
+        return model_info
+    except Exception as e:
+        st.error(f"Error getting model information: {str(e)}")
+        return None
