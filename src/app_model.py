@@ -13,20 +13,25 @@ MAX_LENGTH = 512
 
 @st.cache_resource
 def load_model():
-    """Loads the model and tokenizer based on environment"""
+    """Loads the model and tokenizer with better error handling"""
+    local_path = "./models/sentiment_model"
+    hf_path = "dgerwig/sentiment-analysis"
+    
     try:
-        is_streamlit_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
-        model_path = "dgerwig/sentiment-analysis" if is_streamlit_cloud else "./models/sentiment_model"
-        print(f"Loading model from: {model_path}")
+        # Try local first
+        if os.path.exists(local_path) and os.path.isfile(os.path.join(local_path, "config.json")):
+            model_path = local_path
+            local_files = True
+        else:
+            model_path = hf_path
+            local_files = False
         
-        if not is_streamlit_cloud and not os.path.exists(model_path):
-            st.error(f"Local model not found at {model_path}")
-            model_path = "dgerwig/sentiment-analysis"
-            print(f"Falling back to HuggingFace model: {model_path}")
+        print(f"Loading model from: {model_path}")
         
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
-            trust_remote_code=True
+            trust_remote_code=True,
+            local_files_only=local_files
         )
         
         model = AutoModelForSequenceClassification.from_pretrained(
@@ -34,12 +39,19 @@ def load_model():
             use_safetensors=True,
             trust_remote_code=True,
             torch_dtype=torch.float32,
-            local_files_only=not is_streamlit_cloud
+            local_files_only=local_files
         )
         
         return model, tokenizer
+        
     except Exception as e:
-        st.error(f"Error loading model: {str(e)}")
+        st.error(f"""
+            Error loading model. Please ensure either:
+            1. Local model exists at {local_path} with config.json, or
+            2. You have internet connection to download from HuggingFace
+            
+            Error: {str(e)}
+        """)
         raise e
 
 def predict_sentiment(model, text_input, tokenizer):
