@@ -103,7 +103,6 @@ Try out the sentiment analysis model in our [Streamlit web app](https://42-llm.s
 The web interface allows you to input text and get instant sentiment predictions using our fine-tuned DistilBERT model.
 
 <img src="./images/input.png" width=100%>
-<img src="./images/sidebar.png" width="350">
-<img src="./images/tokens.png" width="800">
-<img src="./images/model.png" width="800">
-
+<img src="./images/sidebar.png" width=40%>
+<img src="./images/tokens.png" width=100%>
+<img src="./images/model.png" width=100%>
