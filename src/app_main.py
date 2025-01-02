@@ -23,7 +23,7 @@ def main():
         # Render sidebar
         render_sidebar()
         
-        st.title("Sentiment Analysis")
+        st.title("🔮 Sentiment Analysis 🔮")
         st.write("Enter your text below to analyze its sentiment.")
         
         # Add custom CSS for text area
