@@ -48,4 +48,61 @@ By completing this project, students will:
 ---
 ---
 
+## Implementation Guide
 
+1. **Setup and Environment**
+   - Install required Python packages: torch, transformers, pandas, scikit-learn, datasets
+   - Configure CUDA for GPU acceleration if available
+   - Verify system resources (CPU, RAM, GPU)
+
+2. **Data Preparation**
+   - Load datasets from Hugging Face (IMDB) and local files
+   - Analyze dataset characteristics (size, distribution, text length)
+   - Generate data reports using ydata-profiling
+   - Split data into train/validation/test sets (70/10/20)
+
+3. **Model Selection and Evaluation**
+   - Compare different transformer models:
+     - DistilBERT (selected for efficiency)
+     - BERT
+     - RoBERTa
+   - Analyze model characteristics (size, speed, memory usage)
+   - Test tokenization approaches
+
+4. **Hyperparameter Optimization**
+   - Implement grid search with cross-validation
+   - Parameters tuned:
+     - Learning rate: 3e-5, 5e-5
+     - Batch size: 16, 32
+     - Dropout: 0.1, 0.15
+     - Weight decay: 0.005, 0.01
+     - Number of epochs: 3, 4
+
+5. **Model Training**
+   - Initialize DistilBERT with optimal parameters
+   - Implement early stopping
+   - Use AdamW optimizer with weight decay
+   - Apply linear learning rate scheduling with warmup
+   - Monitor training metrics (loss, accuracy)
+
+6. **Evaluation and Results**
+   - Calculate test set metrics:
+     - Accuracy
+     - F1 score
+     - Classification report
+   - Plot training history
+   - Save trained model and tokenizer
+
+---
+---
+
+## Live Demo
+
+Try out the sentiment analysis model in our [Streamlit web app](https://42-llm.streamlit.app/)
+
+The web interface allows you to input text and get instant sentiment predictions using our fine-tuned DistilBERT model.
+
+![Streamlit App Demo](./images/input.png)
+![Streamlit App Demo](./images/sidebar.png)
+![Streamlit App Demo](./images/tokens.png)
+![Streamlit App Demo](./images/model.png)
