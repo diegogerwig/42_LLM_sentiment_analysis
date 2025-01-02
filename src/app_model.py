@@ -7,18 +7,19 @@ import streamlit as st
 import os
 from app_config import LOCAL_MODEL_PATH, HF_MODEL_PATH, MAX_LENGTH
 
-@st.cache_resource
+@st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
 def load_model():
-    """Loads the model and tokenizer with better error handling"""
-    LOCAL_MODEL_PATH = "./models/sentiment_model"
-    HF_MODEL_PATH = "dgerwig/sentiment-analysis"
-    
+    """Loads the model and tokenizer"""
     try:
-        # Try local first
-        if os.path.exists(LOCAL_MODEL_PATH) and os.path.isfile(os.path.join(LOCAL_MODEL_PATH, "config.json")):
+        is_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
+        
+        if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
             local_files = True
         else:
+            from huggingface_hub import model_info
+            hf_info = model_info(HF_MODEL_PATH)
+            print(f"HF model version: {hf_info.sha}")
             model_path = HF_MODEL_PATH
             local_files = False
         
@@ -41,13 +42,7 @@ def load_model():
         return model, tokenizer
         
     except Exception as e:
-        st.error(f"""
-            Error loading model. Please ensure either:
-            1. Local model exists at {LOCAL_MODEL_PATH} with config.json, or
-            2. You have internet connection to download from HuggingFace
-            
-            Error: {str(e)}
-        """)
+        st.error(f"Error loading model: {str(e)}")
         raise e
 
 def predict_sentiment(model, text_input, tokenizer):
