@@ -5,25 +5,21 @@ import torch.nn.functional as F
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import streamlit as st
 import os
-
-# Constants
-LOCAL_MODEL_PATH = "./models/sentiment_model"
-HF_MODEL_PATH = "dgerwig/sentiment-analysis"
-MAX_LENGTH = 512
+from app_config import LOCAL_MODEL_PATH, HF_MODEL_PATH, MAX_LENGTH
 
 @st.cache_resource
 def load_model():
     """Loads the model and tokenizer with better error handling"""
-    local_path = "./models/sentiment_model"
-    hf_path = "dgerwig/sentiment-analysis"
+    LOCAL_MODEL_PATH = "./models/sentiment_model"
+    HF_MODEL_PATH = "dgerwig/sentiment-analysis"
     
     try:
         # Try local first
-        if os.path.exists(local_path) and os.path.isfile(os.path.join(local_path, "config.json")):
-            model_path = local_path
+        if os.path.exists(LOCAL_MODEL_PATH) and os.path.isfile(os.path.join(LOCAL_MODEL_PATH, "config.json")):
+            model_path = LOCAL_MODEL_PATH
             local_files = True
         else:
-            model_path = hf_path
+            model_path = HF_MODEL_PATH
             local_files = False
         
         print(f"Loading model from: {model_path}")
@@ -47,7 +43,7 @@ def load_model():
     except Exception as e:
         st.error(f"""
             Error loading model. Please ensure either:
-            1. Local model exists at {local_path} with config.json, or
+            1. Local model exists at {LOCAL_MODEL_PATH} with config.json, or
             2. You have internet connection to download from HuggingFace
             
             Error: {str(e)}
