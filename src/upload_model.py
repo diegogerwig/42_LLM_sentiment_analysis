@@ -60,7 +60,7 @@ def upload_model_to_hf(local_model_path, repo_name):
         repo_type="model"
     )
     
-    print(f"Model uploaded to: {repo_url}")
+    print(f"✅ Model uploaded to: {repo_url}")
     return repo_url
 
 if __name__ == "__main__":

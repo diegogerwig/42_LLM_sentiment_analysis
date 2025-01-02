@@ -15,11 +15,14 @@ MAX_LENGTH = 512
 def load_model():
     """Loads the model and tokenizer based on environment"""
     try:
-        # Determine if running on Streamlit Cloud
         is_streamlit_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
-        model_path = HF_MODEL_PATH if is_streamlit_cloud else LOCAL_MODEL_PATH
-        
+        model_path = "dgerwig/sentiment-analysis" if is_streamlit_cloud else "./models/sentiment_model"
         print(f"Loading model from: {model_path}")
+        
+        if not is_streamlit_cloud and not os.path.exists(model_path):
+            st.error(f"Local model not found at {model_path}")
+            model_path = "dgerwig/sentiment-analysis"
+            print(f"Falling back to HuggingFace model: {model_path}")
         
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
@@ -31,7 +34,6 @@ def load_model():
             use_safetensors=True,
             trust_remote_code=True,
             torch_dtype=torch.float32,
-            # Only use local_files_only when running locally
             local_files_only=not is_streamlit_cloud
         )
         
@@ -53,8 +55,8 @@ def predict_sentiment(model, text_input, tokenizer):
         with torch.no_grad():
             output = model(**encoded_input)
             probabilities = F.softmax(output.logits, dim=1)
-            prediction = torch.argmax(probabilities, dim=1)
             confidence = torch.max(probabilities)
+            prediction = torch.argmax(probabilities, dim=1)
         
         label = "POSITIVE" if prediction.item() == 1 else "NEGATIVE"
         score = confidence.item()
