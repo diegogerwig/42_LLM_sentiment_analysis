@@ -28,19 +28,18 @@ def main():
         # Add custom CSS for text area
         st.markdown(TEXT_AREA_STYLE, unsafe_allow_html=True)
         
-        # Initialize text input in session state if needed
-        if 'text_area' not in st.session_state:
-            st.session_state.text_area = ""
-        
         # Text input area
         text_input = st.text_area(
             "Enter text to analyze:",
-            value=st.session_state.text_area,
+            value=st.session_state.get('text_input', ''),
             max_chars=15000,
             height=200,
             key="text_area",
-            on_change=lambda: setattr(st.session_state, 'text_input', st.session_state.text_area)
+            on_change=lambda: setattr(st.session_state, 'analyze_clicked', True)
         )
+        
+        # Update text_input in session state
+        st.session_state.text_input = text_input
         
         # Create columns for buttons
         col1, col2 = st.columns(2)
@@ -52,13 +51,11 @@ def main():
         clear_button = col2.button("CLEAR", use_container_width=True)
         
         if clear_button:
-            # Clear both the session state variables for text
-            st.session_state.text_area = ""
             st.session_state.text_input = ""
-            text_input = ""
+            st.session_state.analyze_clicked = False
             st.rerun()
         
-        if (analyze_button or st.session_state.get('analyze_clicked', False)) and text_input:
+        if (analyze_button or st.session_state.analyze_clicked) and text_input:
             st.session_state.analyze_clicked = False
             
             with st.spinner("Analyzing..."):
