@@ -114,7 +114,7 @@ def get_model_info(model, tokenizer):
             "Base Model": model.config._name_or_path,
             "Hidden Size": model.config.hidden_size,
             "Number of Hidden Layers": model.config.num_hidden_layers,
-            "Number of Attention Heads (enable the model to focus on different parts of the text simultaneously, capturing complex relationships between words)": model.config.num_attention_heads,
+            "Number of Attention Heads": model.config.num_attention_heads,
             "Max Position Embeddings": model.config.max_position_embeddings,
             
             # Model Parameters
