@@ -208,28 +208,29 @@ def display_model_info(model_info):
     # Header section with version info
     st.markdown("## Model Information")
     
-    # Display version info in columns under the main header with darker background
+    # Display version info in a more compact format with better contrast
     st.markdown(
         f"""
         <div style='
-            padding: 1rem;
-            background-color: #e2e8f0;  # Gris medio
+            padding: 0.75rem 1rem;
+            background-color: #2d3748;
             border-radius: 0.5rem;
             margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid #cbd5e0;
+            color: white;
         '>
-            <div>
-                <span style='color: #4a5568; font-size: 0.9rem;'>Version:</span>
-                <br/>
-                <span style='color: #1a202c; font-size: 1.1rem; font-weight: bold;'>{model_info['Model Version']}</span>
-            </div>
-            <div style='text-align: right;'>
-                <span style='color: #4a5568; font-size: 0.9rem;'>Last Updated:</span>
-                <br/>
-                <span style='color: #1a202c; font-size: 1.1rem; font-weight: bold;'>{model_info['Last Updated']}</span>
+            <div style='
+                display: flex;
+                align-items: center;
+                gap: 2rem;
+            '>
+                <div style='display: flex; align-items: center; gap: 0.5rem;'>
+                    <span style='color: #a0aec0; font-size: 0.9rem;'>Version:</span>
+                    <span style='color: #ffffff; font-weight: 500;'>{model_info['Model Version']}</span>
+                </div>
+                <div style='display: flex; align-items: center; gap: 0.5rem;'>
+                    <span style='color: #a0aec0; font-size: 0.9rem;'>Last Updated:</span>
+                    <span style='color: #ffffff; font-weight: 500;'>{model_info['Last Updated']}</span>
+                </div>
             </div>
         </div>
         """,
