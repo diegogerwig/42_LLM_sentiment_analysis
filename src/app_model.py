@@ -6,6 +6,21 @@ import os
 from datetime import datetime
 from app_config import LOCAL_MODEL_PATH, HF_MODEL_PATH, MAX_LENGTH
 
+def get_latest_file_date(model_path):
+    """Gets the most recent modification date from model directory"""
+    if os.path.isfile(model_path):
+        return os.path.getmtime(model_path)
+    
+    latest_timestamp = 0
+    for root, dirs, files in os.walk(model_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_timestamp = os.path.getmtime(file_path)
+            if file_timestamp > latest_timestamp:
+                latest_timestamp = file_timestamp
+    
+    return latest_timestamp if latest_timestamp > 0 else None
+
 @st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
 def load_model():
     """Loads the model and tokenizer"""
@@ -17,9 +32,10 @@ def load_model():
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
             local_files = True
-            # Get local model timestamp
-            timestamp = os.path.getmtime(LOCAL_MODEL_PATH)
-            model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+            # Get latest file modification timestamp
+            timestamp = get_latest_file_date(LOCAL_MODEL_PATH)
+            if timestamp:
+                model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
             model_version = f"Local Model"
         else:
             from huggingface_hub import model_info
@@ -27,19 +43,20 @@ def load_model():
             model_path = HF_MODEL_PATH
             local_files = False
             # Get HuggingFace model version
-            model_version = f"HuggingFace - {hf_info.sha[:7]}"  # Use first 7 chars of SHA
-            # Convert last_modified timestamp to datetime string
+            model_version = f"HuggingFace - {hf_info.sha[:7]}"
+            
+            # Try to get the last modified date from the model info
             if hasattr(hf_info, 'last_modified'):
                 try:
-                    last_modified = datetime.fromtimestamp(hf_info.last_modified)
-                    model_timestamp = last_modified.strftime('%Y-%m-%d %H:%M:%S')
+                    model_timestamp = datetime.fromtimestamp(hf_info.last_modified).strftime('%Y-%m-%d %H:%M:%S')
                 except:
-                    model_timestamp = "Unknown"
-            else:
-                model_timestamp = "Unknown"
+                    # If HF timestamp fails, try to get from downloaded files
+                    timestamp = get_latest_file_date(model_path)
+                    if timestamp:
+                        model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+                    else:
+                        model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
-            print(f"HF model info - Version: {model_version}, Last modified: {model_timestamp}")
-        
         print(f"Loading model from: {model_path}")
         
         tokenizer = AutoTokenizer.from_pretrained(

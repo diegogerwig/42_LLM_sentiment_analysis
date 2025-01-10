@@ -208,27 +208,28 @@ def display_model_info(model_info):
     # Header section with version info
     st.markdown("## Model Information")
     
-    # Display version info in columns under the main header
+    # Display version info in columns under the main header with darker background
     st.markdown(
         f"""
         <div style='
             padding: 1rem;
-            background-color: #f8f9fa;
+            background-color: #e2e8f0;  # Gris medio
             border-radius: 0.5rem;
             margin-bottom: 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid #cbd5e0;
         '>
             <div>
-                <span style='color: #666; font-size: 0.9rem;'>Version:</span>
+                <span style='color: #4a5568; font-size: 0.9rem;'>Version:</span>
                 <br/>
-                <span style='color: #000; font-size: 1.1rem; font-weight: bold;'>{model_info['Model Version']}</span>
+                <span style='color: #1a202c; font-size: 1.1rem; font-weight: bold;'>{model_info['Model Version']}</span>
             </div>
             <div style='text-align: right;'>
-                <span style='color: #666; font-size: 0.9rem;'>Last Updated:</span>
+                <span style='color: #4a5568; font-size: 0.9rem;'>Last Updated:</span>
                 <br/>
-                <span style='color: #000; font-size: 1.1rem; font-weight: bold;'>{model_info['Last Updated']}</span>
+                <span style='color: #1a202c; font-size: 1.1rem; font-weight: bold;'>{model_info['Last Updated']}</span>
             </div>
         </div>
         """,
