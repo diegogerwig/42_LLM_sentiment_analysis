@@ -1,5 +1,3 @@
-# app_model.py
-
 import torch
 import torch.nn.functional as F
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -22,18 +20,25 @@ def load_model():
             # Get local model timestamp
             timestamp = os.path.getmtime(LOCAL_MODEL_PATH)
             model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-            model_version = f"Local Model - Last Modified: {model_timestamp}"
+            model_version = f"Local Model"
         else:
             from huggingface_hub import model_info
             hf_info = model_info(HF_MODEL_PATH)
             model_path = HF_MODEL_PATH
             local_files = False
-            # Get HuggingFace model version and last modified date
-            model_version = f"HuggingFace Model - Version: {hf_info.sha}"
-            if hf_info.last_modified:
-                model_timestamp = datetime.fromtimestamp(hf_info.last_modified).strftime('%Y-%m-%d %H:%M:%S')
-                model_version += f" (Last Updated: {model_timestamp})"
-            print(f"HF model info: {model_version}")
+            # Get HuggingFace model version
+            model_version = f"HuggingFace - {hf_info.sha[:7]}"  # Use first 7 chars of SHA
+            # Convert last_modified timestamp to datetime string
+            if hasattr(hf_info, 'last_modified'):
+                try:
+                    last_modified = datetime.fromtimestamp(hf_info.last_modified)
+                    model_timestamp = last_modified.strftime('%Y-%m-%d %H:%M:%S')
+                except:
+                    model_timestamp = "Unknown"
+            else:
+                model_timestamp = "Unknown"
+            
+            print(f"HF model info - Version: {model_version}, Last modified: {model_timestamp}")
         
         print(f"Loading model from: {model_path}")
         
@@ -51,7 +56,7 @@ def load_model():
             local_files_only=local_files
         )
         
-        # Store version info in model config for later use
+        # Store version info in model config
         model.config.model_version = model_version
         model.config.model_timestamp = model_timestamp
         
