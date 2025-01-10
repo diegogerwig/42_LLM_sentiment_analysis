@@ -54,7 +54,7 @@ def main():
         
         if clear_button:
             reset_session_state()
-            st.experimental_rerun()
+            st.rerun()  # Cambiado de experimental_rerun() a rerun()
         
         if analyze_button and text_input:
             st.session_state.text_input = text_input
