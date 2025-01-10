@@ -48,7 +48,8 @@ By completing this project, students will:
 ---
 ---
 
-## Implementation Guide
+## 🤖 MY Implementation Guide
+Author: [Diego Gerwig López](https://github.com/diegogerwig)
 
 1. **Setup and Environment**
    - Install required Python packages: torch, transformers, pandas, scikit-learn, datasets
@@ -96,7 +97,7 @@ By completing this project, students will:
 ---
 ---
 
-## Live Demo
+## 💫 Live Demo 💫
 
 Try out the sentiment analysis model in our [Streamlit web app](https://42-llm.streamlit.app/)
 
