@@ -12,10 +12,7 @@ from app_utils import init_session_state
 def main():
     """Main application function"""
     st.set_page_config(page_title=PAGE_TITLE, page_icon=PAGE_ICON, layout=PAGE_LAYOUT)
-    
-    # Initialize session state if not already done
-    if 'text_input' not in st.session_state:
-        st.session_state.text_input = ""
+    init_session_state()
     
     try:
         # Load model and add button styles
@@ -31,27 +28,35 @@ def main():
         # Add custom CSS for text area
         st.markdown(TEXT_AREA_STYLE, unsafe_allow_html=True)
         
-        # Create columns for buttons first
-        col1, col2 = st.columns(2)
+        # Initialize text input in session state if needed
+        if 'text_area' not in st.session_state:
+            st.session_state.text_area = ""
         
-        # Clear button (yellow) - Moved before text_area
-        clear_button = col2.button("CLEAR", use_container_width=True)
-        if clear_button:
-            st.session_state.text_input = ""
-            st.rerun()
-            
         # Text input area
         text_input = st.text_area(
             "Enter text to analyze:",
-            value=st.session_state.text_input,
+            value=st.session_state.text_area,
             max_chars=15000,
             height=200,
             key="text_area",
-            on_change=lambda: setattr(st.session_state, 'analyze_clicked', True)
+            on_change=lambda: setattr(st.session_state, 'text_input', st.session_state.text_area)
         )
+        
+        # Create columns for buttons
+        col1, col2 = st.columns(2)
         
         # Analyze button (blue)
         analyze_button = col1.button("ANALYZE", use_container_width=True)
+        
+        # Clear button (yellow)
+        clear_button = col2.button("CLEAR", use_container_width=True)
+        
+        if clear_button:
+            # Clear both the session state variables for text
+            st.session_state.text_area = ""
+            st.session_state.text_input = ""
+            text_input = ""
+            st.rerun()
         
         if (analyze_button or st.session_state.get('analyze_clicked', False)) and text_input:
             st.session_state.analyze_clicked = False
