@@ -61,18 +61,7 @@ clean:
 	find . -type d -name "__pycache__" -delete
 
 requirements:
-	@echo "streamlit>=1.24.0" > requirements.txt
-	@echo "transformers>=4.30.0" >> requirements.txt
-	@echo "torch>=2.0.0" >> requirements.txt
-	@echo "pandas>=1.5.0" >> requirements.txt
-	@echo "huggingface-hub>=0.16.4" >> requirements.txt
-	@echo "python-dotenv>=0.19.0" >> requirements.txt
-	@echo "jupyter" >> requirements.txt
-	@echo "flake8" >> requirements.txt
-	@echo "pytest" >> requirements.txt
-	@echo "scikit-learn" >> requirements.txt
-	@echo "numpy" >> requirements.txt
-	@echo "tqdm" >> requirements.txt
+	@pip install -r requirements.txt
 
 deploy: setup upload run
 
