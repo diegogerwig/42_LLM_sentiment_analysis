@@ -205,7 +205,35 @@ def display_influence_analysis(token_data):
 
 def display_model_info(model_info):
     """Displays detailed model information"""
+    # Header section with version info
     st.markdown("## Model Information")
+    
+    # Display version info in columns under the main header
+    st.markdown(
+        f"""
+        <div style='
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        '>
+            <div>
+                <span style='color: #666; font-size: 0.9rem;'>Version:</span>
+                <br/>
+                <span style='color: #000; font-size: 1.1rem; font-weight: bold;'>{model_info['Model Version']}</span>
+            </div>
+            <div style='text-align: right;'>
+                <span style='color: #666; font-size: 0.9rem;'>Last Updated:</span>
+                <br/>
+                <span style='color: #000; font-size: 1.1rem; font-weight: bold;'>{model_info['Last Updated']}</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     
     # Create tabs for different categories of information
     tab1, tab2, tab3, tab4 = st.tabs([
@@ -273,6 +301,16 @@ def display_model_info(model_info):
     
     with tab4:
         st.markdown("### Model Configuration")
+        # Display version information at the top of the configuration tab
+        version_col1, version_col2 = st.columns(2)
+        with version_col1:
+            st.metric("Model Version", model_info["Model Version"])
+        with version_col2:
+            st.metric("Last Updated", model_info["Last Updated"])
+        
+        st.markdown("---")  # Add separator
+        
+        # Display other configuration information
         st.json({
             "problem_type": model_info["Problem Type"],
             "num_labels": model_info["Number of Labels"],

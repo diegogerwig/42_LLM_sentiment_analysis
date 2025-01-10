@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import streamlit as st
 import os
+from datetime import datetime
 from app_config import LOCAL_MODEL_PATH, HF_MODEL_PATH, MAX_LENGTH
 
 @st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
@@ -12,16 +13,27 @@ def load_model():
     """Loads the model and tokenizer"""
     try:
         is_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
+        model_version = None
+        model_timestamp = None
         
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
             local_files = True
+            # Get local model timestamp
+            timestamp = os.path.getmtime(LOCAL_MODEL_PATH)
+            model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+            model_version = f"Local Model - Last Modified: {model_timestamp}"
         else:
             from huggingface_hub import model_info
             hf_info = model_info(HF_MODEL_PATH)
-            print(f"HF model version: {hf_info.sha}")
             model_path = HF_MODEL_PATH
             local_files = False
+            # Get HuggingFace model version and last modified date
+            model_version = f"HuggingFace Model - Version: {hf_info.sha}"
+            if hf_info.last_modified:
+                model_timestamp = datetime.fromtimestamp(hf_info.last_modified).strftime('%Y-%m-%d %H:%M:%S')
+                model_version += f" (Last Updated: {model_timestamp})"
+            print(f"HF model info: {model_version}")
         
         print(f"Loading model from: {model_path}")
         
@@ -38,6 +50,10 @@ def load_model():
             torch_dtype=torch.float32,
             local_files_only=local_files
         )
+        
+        # Store version info in model config for later use
+        model.config.model_version = model_version
+        model.config.model_timestamp = model_timestamp
         
         return model, tokenizer
         
@@ -126,6 +142,10 @@ def get_model_info(model, tokenizer):
             "Activation Function": getattr(model.config, "activation", "gelu"),
             "Problem Type": getattr(model.config, "problem_type", "Not specified"),
             "Number of Labels": model.config.num_labels,
+            
+            # Version Information
+            "Model Version": getattr(model.config, "model_version", "Unknown"),
+            "Last Updated": getattr(model.config, "model_timestamp", "Unknown"),
             
             # Tokenizer Information
             "Tokenizer Type": type(tokenizer).__name__,
