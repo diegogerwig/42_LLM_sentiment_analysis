@@ -11,9 +11,11 @@ from app_utils import init_session_state
 
 def reset_session_state():
     """Reset all session state variables"""
-    for key in ['text_input', 'analyze_clicked', 'analysis_result', 'token_analysis']:
-        if key in st.session_state:
-            del st.session_state[key]
+    # Clear all state variables, including text_area
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    # Reinitialize text_area as empty
+    st.session_state.text_area = ""
 
 def main():
     """Main application function"""
@@ -37,7 +39,7 @@ def main():
         # Text input area
         text_input = st.text_area(
             "Enter text to analyze:",
-            value="" if 'text_input' not in st.session_state else st.session_state.text_input,
+            value=st.session_state.get('text_area', ''),  # Use get() to avoid KeyError
             max_chars=15000,
             height=200,
             key="text_area"
@@ -54,7 +56,7 @@ def main():
         
         if clear_button:
             reset_session_state()
-            st.rerun()  # Cambiado de experimental_rerun() a rerun()
+            st.rerun()
         
         if analyze_button and text_input:
             st.session_state.text_input = text_input
@@ -76,17 +78,6 @@ def main():
                     if token_analysis:
                         st.session_state.token_analysis = (token_analysis, total_tokens)
                         display_token_analysis(token_analysis, total_tokens, attribution_scores)
-        
-        # Display previous results if they exist in session state
-        elif st.session_state.get('analyze_clicked', False) and st.session_state.get('analysis_result'):
-            st.markdown("## Results")
-            result = st.session_state.analysis_result
-            display_sentiment(result["label"], result["score"])
-            
-            if st.session_state.get('token_analysis'):
-                token_analysis, total_tokens = st.session_state.token_analysis
-                attribution_scores = calculate_token_attributions(model, tokenizer, text_input)
-                display_token_analysis(token_analysis, total_tokens, attribution_scores)
         
         # Add separator before model information
         st.markdown("---")
