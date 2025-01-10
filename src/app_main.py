@@ -31,7 +31,7 @@ def main():
         # Text input area
         text_input = st.text_area(
             "Enter text to analyze:",
-            value=st.session_state.text_input,
+            value="" if st.session_state.get('clear_clicked', False) else st.session_state.text_input,
             max_chars=15000,
             height=200,
             key="text_area",
@@ -50,8 +50,10 @@ def main():
         if clear_button:
             st.session_state.text_input = ""
             st.session_state.analyze_clicked = False
-            st.session_state["text_area"] = ""  # Add this line to clear the text area
+            st.session_state.clear_clicked = True
             st.rerun()
+        else:
+            st.session_state.clear_clicked = False
         
         if (analyze_button or st.session_state.analyze_clicked) and text_input:
             st.session_state.analyze_clicked = False
