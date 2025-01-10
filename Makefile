@@ -63,6 +63,13 @@ clean:
 requirements:
 	@pip install -r requirements.txt
 
-deploy: setup upload run
+git:
+	@git add .
+	@git commit -m "update"
+	@git push
+
+local: setup upload run 
+
+deploy: upload git 
 
 .PHONY: setup train upload run clean help check-env deploy
