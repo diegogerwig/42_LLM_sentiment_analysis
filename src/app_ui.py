@@ -227,7 +227,15 @@ def display_model_info(model_info):
             
         with arch_col2:
             st.metric("Base Model", model_info["Base Model"])
-            st.metric("Attention Heads (enable the model to focus on different parts of the text simultaneously, capturing complex relationships between words) ", model_info["Number of Attention Heads"])
+            st.metric(
+                """
+                Attention Heads 
+                (enable model to focus on different parts of the text simultaneously, 
+                capturing complex relationships between words)
+                """,
+                model_info["Number of Attention Heads"]
+)
+
     
     with tab2:
         st.markdown("### Model Parameters")
