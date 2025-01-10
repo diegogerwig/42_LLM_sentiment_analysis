@@ -1,4 +1,3 @@
-# app_main.py
 import streamlit as st
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning)
@@ -8,6 +7,19 @@ from app_model import load_model, predict_sentiment, calculate_token_attribution
 from app_tokens import analyze_tokens
 from app_ui import render_sidebar, display_sentiment, display_token_analysis, display_model_info
 from app_utils import init_session_state
+
+def reset_all_states():
+    """Reset all relevant session states"""
+    keys_to_reset = [
+        'text_input',
+        'analyze_clicked',
+        'analysis_result',
+        'token_analysis',
+        'attribution_scores'
+    ]
+    for key in keys_to_reset:
+        if key in st.session_state:
+            del st.session_state[key]
 
 def main():
     """Main application function"""
@@ -34,12 +46,13 @@ def main():
             value=st.session_state.get('text_input', ''),
             max_chars=15000,
             height=200,
-            key="text_area",
-            on_change=lambda: setattr(st.session_state, 'analyze_clicked', True)
+            key="text_area"
         )
         
         # Update text_input in session state
-        st.session_state.text_input = text_input
+        if 'text_input' not in st.session_state or st.session_state.text_input != text_input:
+            st.session_state.text_input = text_input
+            st.session_state.analyze_clicked = False
         
         # Create columns for buttons
         col1, col2 = st.columns(2)
@@ -48,15 +61,12 @@ def main():
         analyze_button = col1.button("ANALYZE", use_container_width=True)
         
         # Clear button (yellow)
-        clear_button = col2.button("CLEAR", use_container_width=True)
-        
-        if clear_button:
-            st.session_state.text_input = ""
-            st.session_state.analyze_clicked = False
+        if col2.button("CLEAR", use_container_width=True):
+            reset_all_states()
             st.rerun()
         
-        if (analyze_button or st.session_state.analyze_clicked) and text_input:
-            st.session_state.analyze_clicked = False
+        if (analyze_button or st.session_state.get('analyze_clicked', False)) and text_input:
+            st.session_state.analyze_clicked = True
             
             with st.spinner("Analyzing..."):
                 # Sentiment Analysis
