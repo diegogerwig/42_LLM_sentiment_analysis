@@ -9,22 +9,6 @@ from app_tokens import analyze_tokens
 from app_ui import render_sidebar, display_sentiment, display_token_analysis, display_model_info
 from app_utils import init_session_state
 
-def reset_session_state():
-    """Reset all session state variables except sidebar examples"""
-    # Save the example text if it exists
-    example_text = st.session_state.get('text_input', '') if st.session_state.get('from_example', False) else ''
-    
-    # Clear specific analysis-related states
-    analysis_keys = ['analyze_clicked', 'analysis_result', 'token_analysis']
-    for key in analysis_keys:
-        if key in st.session_state:
-            del st.session_state[key]
-    
-    # Reset text area while preserving example if needed
-    st.session_state.text_area = example_text
-    st.session_state.text_input = example_text
-    st.session_state.from_example = False
-
 def main():
     """Main application function"""
     st.set_page_config(page_title=PAGE_TITLE, page_icon=PAGE_ICON, layout=PAGE_LAYOUT)
@@ -47,11 +31,11 @@ def main():
         # Text input area
         text_input = st.text_area(
             "Enter text to analyze:",
-            value=st.session_state.get('text_input', ''),
+            value=st.session_state.text_input,
             max_chars=15000,
             height=200,
             key="text_area",
-            on_change=lambda: setattr(st.session_state, 'text_input', st.session_state.text_area)
+            on_change=lambda: setattr(st.session_state, 'analyze_clicked', True)
         )
         
         # Create columns for buttons
@@ -64,17 +48,18 @@ def main():
         clear_button = col2.button("CLEAR", use_container_width=True)
         
         if clear_button:
-            reset_session_state()
+            st.session_state.text_input = ""
+            st.session_state.analyze_clicked = False
+            st.session_state["text_area"] = ""  # Add this line to clear the text area
             st.rerun()
         
-        if analyze_button and text_input:
-            st.session_state.analyze_clicked = True
+        if (analyze_button or st.session_state.analyze_clicked) and text_input:
+            st.session_state.analyze_clicked = False
             
             with st.spinner("Analyzing..."):
                 # Sentiment Analysis
                 result = predict_sentiment(model, text_input, tokenizer)
                 if result:
-                    st.session_state.analysis_result = result
                     st.markdown("## Results")
                     display_sentiment(result["label"], result["score"])
                     
@@ -84,19 +69,7 @@ def main():
                     # Token Analysis
                     token_analysis, total_tokens = analyze_tokens(text_input, tokenizer)
                     if token_analysis:
-                        st.session_state.token_analysis = (token_analysis, total_tokens)
                         display_token_analysis(token_analysis, total_tokens, attribution_scores)
-        
-        # Display previous results if they exist in session state
-        elif st.session_state.get('analyze_clicked', False) and st.session_state.get('analysis_result'):
-            st.markdown("## Results")
-            result = st.session_state.analysis_result
-            display_sentiment(result["label"], result["score"])
-            
-            if st.session_state.get('token_analysis'):
-                token_analysis, total_tokens = st.session_state.token_analysis
-                attribution_scores = calculate_token_attributions(model, tokenizer, text_input)
-                display_token_analysis(token_analysis, total_tokens, attribution_scores)
         
         # Add separator before model information
         st.markdown("---")
