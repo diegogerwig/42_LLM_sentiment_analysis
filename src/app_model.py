@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta
 
 def get_last_commit_info(repo_id):
     """
-    Gets the last commit information from a Hugging Face repo
+    Gets the last commit information from a Hugging Face repo with proper timezone handling
     """
     try:
         api = HfApi()
@@ -18,9 +18,15 @@ def get_last_commit_info(repo_id):
         # Get the latest commit (first in the list)
         if commits:
             last_commit = commits[0]
+            
+            # Convert the commit date to UTC+1
+            commit_date = datetime.fromisoformat(last_commit.created_at.replace('Z', '+00:00'))
+            tz = timezone(timedelta(hours=1))
+            local_date = commit_date.astimezone(tz)
+            
             return {
                 'hash': last_commit.commit_id,
-                'date': last_commit.created_at,
+                'date': local_date,
                 'author': last_commit.author,
                 'message': last_commit.title
             }
@@ -39,14 +45,20 @@ def load_model():
         # Get HuggingFace commit information
         hf_commit_info = get_last_commit_info(HF_MODEL_PATH)
         
+        # Create timezone aware datetime for UTC+1
+        tz = timezone(timedelta(hours=1))
+        current_time = datetime.now(tz)
+        
         if hf_commit_info:
             model_version = f"{hf_commit_info['hash'][:7]}"
-            model_timestamp = hf_commit_info['date'].strftime('%Y-%m-%d %H:%M:%S')
+            # Convert commit date to UTC+1
+            commit_date = hf_commit_info['date'].astimezone(tz)
+            model_timestamp = commit_date.strftime('%Y-%m-%d %H:%M:%S')
             commit_author = hf_commit_info['author']
             commit_message = hf_commit_info['message']
         else:
             model_version = "Unknown"
-            model_timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            model_timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
             commit_author = "Unknown"
             commit_message = "No commit message available"
 
@@ -71,7 +83,7 @@ def load_model():
             local_files_only=local_files
         )
         
-        # Store detailed version info in model config
+        # Store version info in model config
         model.config.model_version = model_version
         model.config.model_timestamp = model_timestamp
         model.config.commit_author = commit_author
