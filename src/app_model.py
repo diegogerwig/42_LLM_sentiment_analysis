@@ -3,9 +3,9 @@ import torch.nn.functional as F
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import streamlit as st
 import os
-from datetime import datetime
 from app_config import LOCAL_MODEL_PATH, HF_MODEL_PATH, MAX_LENGTH
 from huggingface_hub import hf_hub_url, model_info, HfApi
+from datetime import datetime, timezone, timedelta
 
 def get_last_commit_info(repo_id):
     """
@@ -43,46 +43,43 @@ def load_model():
         model_version = None
         model_timestamp = None
         
+        # Function to convert UTC to UTC+1
+        def convert_to_utc_plus_1(utc_time):
+            if isinstance(utc_time, str):
+                utc_time = datetime.strptime(utc_time, '%Y-%m-%d %H:%M:%S')
+            return (utc_time + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+        
+        api = HfApi()
+        try:
+            # Get repository commits
+            commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
+            
+            # Find last model update by looking for model.safetensors in the commit files
+            for commit in commits:
+                commit_info = api.get_commit_info(repo_id=HF_MODEL_PATH, commit_hash=commit.commit_id)
+                if any('model.safetensors' in file.path for file in commit_info.files):
+                    model_timestamp = convert_to_utc_plus_1(commit.created_at)
+                    model_version = f"Model version: {commit.commit_id[:7]} (by {commit.author})"
+                    break
+        except Exception as e:
+            print(f"Error getting commit info: {e}")
+        
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
             local_files = True
-            
-            # Get all commits and find the last model update
-            api = HfApi()
-            commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
-            
-            # Look for commits that mention model updates or model.safetensors
-            for commit in commits:
-                if any(term in commit.title.lower() for term in ['model', 'weights', 'safetensors']):
-                    model_version = f"Local Model (commit: {commit.commit_id[:7]} by {commit.author})"
-                    model_timestamp = commit.created_at
-                    break
-            
-            if not model_timestamp:  # If no specific model commit found
+            if not model_version:
                 model_version = "Local Model"
-                model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                
+                model_timestamp = convert_to_utc_plus_1(datetime.now())
         else:
             model_path = HF_MODEL_PATH
             local_files = False
-            
-            # Same commit search logic for cloud version
-            api = HfApi()
-            commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
-            
-            for commit in commits:
-                if any(term in commit.title.lower() for term in ['model', 'weights', 'safetensors']):
-                    model_version = f"HuggingFace - {commit.commit_id[:7]}"
-                    model_timestamp = commit.created_at
-                    break
-            
-            if not model_timestamp:
-                model_version = f"HuggingFace - latest"
-                model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            if not model_version:
+                model_version = "HuggingFace Latest"
+                model_timestamp = convert_to_utc_plus_1(datetime.now())
         
         print(f"Loading model from: {model_path}")
         print(f"Model version: {model_version}")
-        print(f"Model timestamp: {model_timestamp}")
+        print(f"Model timestamp (UTC+1): {model_timestamp}")
         
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
