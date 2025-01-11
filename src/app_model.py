@@ -52,7 +52,7 @@ def load_model():
                     model_timestamp = datetime.fromtimestamp(hf_info.last_modified).strftime('%Y-%m-%d %H:%M:%S')
                 except:
                     # If HF timestamp fails, try to get from downloaded files
-                    timestamp = get_latest_file_date(model_path)
+                    timestamp = get_model_safetensors_date(model_path)
                     if timestamp:
                         model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
                     else:
