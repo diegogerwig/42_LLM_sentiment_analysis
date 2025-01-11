@@ -55,21 +55,23 @@ def load_model():
         
         if commits:
             last_commit = commits[0]
+            # Debug info
+            print("Available commit attributes:", dir(last_commit))
+            print("Commit info:", last_commit)
+            
             model_version = last_commit.commit_id[:7]
             
             # Convert commit date to UTC+1
-            # The created_at is already a datetime object, no need to parse
             commit_date = last_commit.created_at
             tz = timezone(timedelta(hours=1))
             local_date = commit_date.astimezone(tz)
             model_timestamp = local_date.strftime('%Y-%m-%d %H:%M:%S')
             
-            commit_author = last_commit.author
-            commit_message = last_commit.title
+            # Get commit details using the correct attribute names
+            commit_message = getattr(last_commit, 'title', 'No message available')
         else:
             model_version = "Unknown"
             model_timestamp = "Unknown"
-            commit_author = "Unknown"
             commit_message = "No commit message"
 
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
@@ -96,7 +98,6 @@ def load_model():
         # Store version info in model config
         model.config.model_version = model_version
         model.config.model_timestamp = model_timestamp
-        model.config.commit_author = commit_author
         model.config.commit_message = commit_message
         
         return model, tokenizer
