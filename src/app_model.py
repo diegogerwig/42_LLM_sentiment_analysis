@@ -39,32 +39,34 @@ def load_model():
         # Get commit information
         api = HfApi()
         try:
-            print(f"Attempting to fetch commits for: {HF_MODEL_PATH}")  # Debug print
             commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
-            print(f"Got commits response: {commits}")  # Debug print
             
             if commits and len(commits) > 0:
                 latest_commit = commits[0]
-                print(f"Latest commit: {latest_commit.__dict__}")  # Debug print
                 
-                commit_date = datetime.fromisoformat(latest_commit.created_at.replace('Z', '+00:00'))
+                # Handle the date string directly
+                created_at = latest_commit.created_at
+                if isinstance(created_at, str):
+                    # Parse the string date
+                    commit_date = datetime.strptime(created_at, '%Y-%m-%d %H:%M:%S')
+                else:
+                    # Already a datetime object
+                    commit_date = created_at
+                    
                 local_date = commit_date + timedelta(hours=1)
                 
                 model_version = f"Commit {latest_commit.commit_id[:7]} by {latest_commit.author}"
                 model_timestamp = local_date.strftime('%Y-%m-%d %H:%M:%S')
-                print(f"Processed version: {model_version}")
-                print(f"Processed timestamp: {model_timestamp}")
+                print(f"Found version: {model_version}")
+                print(f"Found timestamp: {model_timestamp}")
             else:
                 model_version = "Unknown (no commits found)"
                 model_timestamp = "Unknown (no commits found)"
-                print("No commits found in repository")
                 
         except Exception as e:
-            print(f"Detailed error fetching commits: {str(e)}")  # More detailed error
-            import traceback
-            print(f"Error traceback: {traceback.format_exc()}")  # Print full traceback
-            model_version = f"Error: {str(e)}"
-            model_timestamp = f"Error: {str(e)}"
+            print(f"Error getting commits: {str(e)}")
+            model_version = "Unknown"
+            model_timestamp = "Unknown"
 
         # Model loading
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
