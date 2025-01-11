@@ -231,7 +231,7 @@ def display_model_info(model_info):
             '>
                 <div>
                     <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
-                        Model Version (HF)
+                        Model Version (HuggingFace)
                     </h3>
                     <div style='
                         background: rgba(255, 255, 255, 0.1);
@@ -245,7 +245,7 @@ def display_model_info(model_info):
                 </div>
                 <div>
                     <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
-                        Model Updated (HF)
+                        Model Updated (HuggingFace)
                     </h3>
                     <div style='
                         background: rgba(255, 255, 255, 0.1);
@@ -274,15 +274,15 @@ def display_model_info(model_info):
                 margin-bottom: 1rem;
                 color: white;
             '>
-                <div>
-                    <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
-                        App Version (GitHub)
-                    </h3>
-                    <div style='
-                        display: grid;
-                        grid-template-columns: repeat(2, 1fr);
-                        gap: 1rem;
-                    '>
+                <div style='
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 1rem;
+                '>
+                    <div>
+                        <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
+                            App Version (GitHub)
+                        </h3>
                         <div style='
                             background: rgba(255, 255, 255, 0.1);
                             padding: 0.5rem;
@@ -292,6 +292,11 @@ def display_model_info(model_info):
                                 {github_info['hash']}
                             </span>
                         </div>
+                    </div>
+                    <div>
+                        <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
+                            App Updated (GitHub)
+                        </h3>
                         <div style='
                             background: rgba(255, 255, 255, 0.1);
                             padding: 0.5rem;
@@ -307,15 +312,6 @@ def display_model_info(model_info):
             """,
             unsafe_allow_html=True
         )
-    
-    # Debug Info
-    with st.expander("Debug Info", expanded=False):
-        if github_info:
-            st.write("GitHub Commit Info:")
-            st.write(f"- Hash: {github_info['hash']}")
-            st.write(f"- Date: {github_info['date']}")
-            st.write(f"- Message: {github_info['message']}")
-            st.write(f"- Author: {github_info['author']}")
     
     # Create tabs for different categories of information
     tab1, tab2, tab3, tab4 = st.tabs([
@@ -383,16 +379,6 @@ def display_model_info(model_info):
     
     with tab4:
         st.markdown("### Model Configuration")
-        # # Display version information at the top of the configuration tab
-        # version_col1, version_col2 = st.columns(2)
-        # with version_col1:
-        #     st.metric("Model Version", model_info["Model Version"])
-        # with version_col2:
-        #     st.metric("Last Updated", model_info["Last Updated"])
-        
-        # st.markdown("---")  # Add separator
-        
-        # Display other configuration information
         st.json({
             "problem_type": model_info["Problem Type"],
             "num_labels": model_info["Number of Labels"],
