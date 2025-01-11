@@ -39,42 +39,38 @@ def load_model():
         # Get commit information
         api = HfApi()
         try:
+            print(f"Fetching commits for repo: {HF_MODEL_PATH}")  # Debug print
             commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
+            print(f"Number of commits found: {len(commits)}")  # Debug print
             
-            if commits and len(commits) > 0:
+            if commits:
                 latest_commit = commits[0]
+                print(f"Latest commit ID: {latest_commit.commit_id}")  # Debug print
+                print(f"Latest commit date: {latest_commit.created_at}")  # Debug print
+                print(f"Latest commit author: {latest_commit.author}")  # Debug print
                 
-                # Handle the date string directly
-                created_at = latest_commit.created_at
-                if isinstance(created_at, str):
-                    # Parse the string date
-                    commit_date = datetime.strptime(created_at, '%Y-%m-%d %H:%M:%S')
-                else:
-                    # Already a datetime object
-                    commit_date = created_at
-                    
-                local_date = commit_date + timedelta(hours=1)
-                
-                model_version = f"Commit {latest_commit.commit_id[:7]} by {latest_commit.author}"
-                model_timestamp = local_date.strftime('%Y-%m-%d %H:%M:%S')
-                print(f"Found version: {model_version}")
-                print(f"Found timestamp: {model_timestamp}")
+                # Store the information directly
+                version = f"Commit {latest_commit.commit_id[:7]} by {latest_commit.author}"
+                timestamp = latest_commit.created_at
+                print(f"Setting version to: {version}")  # Debug print
+                print(f"Setting timestamp to: {timestamp}")  # Debug print
             else:
-                model_version = "Unknown (no commits found)"
-                model_timestamp = "Unknown (no commits found)"
-                
+                print("No commits found")  # Debug print
+                version = "No commits found"
+                timestamp = "No commits found"
         except Exception as e:
-            print(f"Error getting commits: {str(e)}")
-            model_version = "Unknown"
-            model_timestamp = "Unknown"
+            print(f"Error fetching commits: {str(e)}")  # Debug print
+            version = "Unknown"
+            timestamp = "Unknown"
 
-        # Model loading
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
             local_files = True
         else:
             model_path = HF_MODEL_PATH
             local_files = False
+
+        print(f"Loading model from: {model_path}")  # Debug print
 
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
@@ -90,13 +86,16 @@ def load_model():
             local_files_only=local_files
         )
         
-        # Set custom attributes
-        model.model_version = model_version
-        model.model_timestamp = model_timestamp
+        # Set version info as attributes
+        setattr(model, 'model_version', version)
+        setattr(model, 'model_timestamp', timestamp)
+        print(f"Final version set: {model.model_version}")  # Debug print
+        print(f"Final timestamp set: {model.model_timestamp}")  # Debug print
         
         return model, tokenizer
 
     except Exception as e:
+        print(f"Final error: {str(e)}")  # Debug print
         st.error(f"Error loading model: {str(e)}")
         raise e
 
