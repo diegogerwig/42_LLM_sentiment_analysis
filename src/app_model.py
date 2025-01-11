@@ -9,15 +9,19 @@ from datetime import datetime, timezone, timedelta
 
 def get_last_commit_info(repo_id):
     """
-    Gets the last commit information from a Hugging Face repo with proper timezone handling
+    Gets the last commit information from a Hugging Face repo with debug logging
     """
     try:
+        print(f"Attempting to get commits for repo: {repo_id}")
         api = HfApi()
         commits = api.list_repo_commits(repo_id=repo_id)
+        
+        print(f"Retrieved commits: {commits}")
         
         # Get the latest commit (first in the list)
         if commits:
             last_commit = commits[0]
+            print(f"Latest commit details: {last_commit}")
             
             # Convert the commit date to UTC+1
             commit_date = datetime.fromisoformat(last_commit.created_at.replace('Z', '+00:00'))
@@ -30,20 +34,25 @@ def get_last_commit_info(repo_id):
                 'author': last_commit.author,
                 'message': last_commit.title
             }
+            
+        print("No commits found")
         return None
         
     except Exception as e:
-        print(f"Error accessing commit history: {e}")
+        print(f"Error accessing commit history: {str(e)}")
+        print(f"Error type: {type(e)}")
         return None
 
 @st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
 def load_model():
-    """Loads the model and tokenizer with proper commit information"""
+    """Loads the model and tokenizer with debug information"""
     try:
+        print(f"Using HF_MODEL_PATH: {HF_MODEL_PATH}")
         is_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
 
         # Get HuggingFace commit information
         hf_commit_info = get_last_commit_info(HF_MODEL_PATH)
+        print(f"Retrieved commit info: {hf_commit_info}")
         
         # Create timezone aware datetime for UTC+1
         tz = timezone(timedelta(hours=1))
@@ -51,16 +60,17 @@ def load_model():
         
         if hf_commit_info:
             model_version = f"{hf_commit_info['hash'][:7]}"
-            # Convert commit date to UTC+1
-            commit_date = hf_commit_info['date'].astimezone(tz)
+            commit_date = hf_commit_info['date']
             model_timestamp = commit_date.strftime('%Y-%m-%d %H:%M:%S')
             commit_author = hf_commit_info['author']
             commit_message = hf_commit_info['message']
+            print(f"Using commit info - Version: {model_version}, Time: {model_timestamp}")
         else:
             model_version = "Unknown"
             model_timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
             commit_author = "Unknown"
             commit_message = "No commit message available"
+            print("Using default values due to missing commit info")
 
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
