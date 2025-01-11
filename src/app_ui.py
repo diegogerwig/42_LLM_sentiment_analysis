@@ -212,7 +212,7 @@ def display_model_info(model_info):
     st.markdown("## Model Information")
     
     # Get GitHub commit info
-    github_info = get_github_last_commit('diegogerwig', 'sentiment-analysis')  # Usando los mismos valores que en HF
+    github_info = get_github_last_commit('diegogerwig', '42_LLM_sentiment_analysis')  # Usando los mismos valores que en HF
     
     # Main model info display
     st.markdown(
