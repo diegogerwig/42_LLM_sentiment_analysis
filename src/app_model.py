@@ -6,20 +6,21 @@ import os
 from datetime import datetime
 from app_config import LOCAL_MODEL_PATH, HF_MODEL_PATH, MAX_LENGTH
 
-def get_latest_file_date(model_path):
-    """Gets the most recent modification date from model directory"""
+def get_model_safetensors_date(model_path):
+    """Gets the modification date of model.safetensors file in the model directory"""
     if os.path.isfile(model_path):
-        return os.path.getmtime(model_path)
+        # If model_path is directly the file we're looking for
+        if os.path.basename(model_path) == "model.safetensors":
+            return os.path.getmtime(model_path)
+        return None
     
-    latest_timestamp = 0
+    # Search for model.safetensors in the directory and its subdirectories
     for root, dirs, files in os.walk(model_path):
-        for file in files:
-            file_path = os.path.join(root, file)
-            file_timestamp = os.path.getmtime(file_path)
-            if file_timestamp > latest_timestamp:
-                latest_timestamp = file_timestamp
+        if "model.safetensors" in files:
+            file_path = os.path.join(root, "model.safetensors")
+            return os.path.getmtime(file_path)
     
-    return latest_timestamp if latest_timestamp > 0 else None
+    return None
 
 @st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
 def load_model():
