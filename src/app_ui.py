@@ -204,32 +204,104 @@ def display_influence_analysis(token_data):
             )
 
 def display_model_info(model_info):
-    """Displays detailed model information"""
-    # Header section with version info
+    """Displays detailed model information with Git and HF commit details"""
     st.markdown("## Model Information")
     
-    # Display version info in a more compact format with better contrast
+    # Enhanced version info display with Git and HF commit information
     st.markdown(
         f"""
         <div style='
-            padding: 0.75rem 1rem;
+            padding: 1rem 1.5rem;
             background-color: #2d3748;
             border-radius: 0.5rem;
             margin-bottom: 1rem;
             color: white;
         '>
             <div style='
-                display: flex;
-                align-items: center;
-                gap: 2rem;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+                margin-bottom: 0.75rem;
             '>
-                <div style='display: flex; align-items: center; gap: 0.5rem;'>
-                    <span style='color: #a0aec0; font-size: 0.9rem;'>Version:</span>
-                    <span style='color: #ffffff; font-weight: 500;'>{model_info['Model Version']}</span>
+                <div>
+                    <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
+                        Model Version
+                    </h3>
+                    <div style='
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        background: rgba(255, 255, 255, 0.1);
+                        padding: 0.5rem;
+                        border-radius: 0.25rem;
+                    '>
+                        <span style='color: #ffffff; font-weight: 500;'>
+                            {model_info['Model Version']}
+                        </span>
+                    </div>
                 </div>
-                <div style='display: flex; align-items: center; gap: 0.5rem;'>
-                    <span style='color: #a0aec0; font-size: 0.9rem;'>Last Updated:</span>
-                    <span style='color: #ffffff; font-weight: 500;'>{model_info['Last Updated']}</span>
+                <div>
+                    <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
+                        Last Updated
+                    </h3>
+                    <div style='
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        background: rgba(255, 255, 255, 0.1);
+                        padding: 0.5rem;
+                        border-radius: 0.25rem;
+                    '>
+                        <span style='color: #ffffff; font-weight: 500;'>
+                            {model_info['Last Updated']}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div style='
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                padding-top: 0.75rem;
+            '>
+                <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
+                    Latest Commits
+                </h3>
+                <div style='
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 1rem;
+                '>
+                    <div style='
+                        background: rgba(255, 255, 255, 0.1);
+                        padding: 0.5rem;
+                        border-radius: 0.25rem;
+                    '>
+                        <div style='color: #a0aec0; font-size: 0.8rem;'>Hugging Face</div>
+                        <div style='color: #ffffff; margin-top: 0.25rem;'>
+                            <div style='font-family: monospace;'>{model_info.get('hf_commit_hash', 'N/A')}</div>
+                            <div style='font-size: 0.8rem; color: #a0aec0;'>
+                                {model_info.get('hf_commit_message', 'No commit message')}
+                            </div>
+                            <div style='font-size: 0.8rem; margin-top: 0.25rem;'>
+                                by {model_info.get('hf_commit_author', 'Unknown')}
+                            </div>
+                        </div>
+                    </div>
+                    <div style='
+                        background: rgba(255, 255, 255, 0.1);
+                        padding: 0.5rem;
+                        border-radius: 0.25rem;
+                    '>
+                        <div style='color: #a0aec0; font-size: 0.8rem;'>Git Repository</div>
+                        <div style='color: #ffffff; margin-top: 0.25rem;'>
+                            <div style='font-family: monospace;'>{model_info.get('git_commit_hash', 'N/A')}</div>
+                            <div style='font-size: 0.8rem; color: #a0aec0;'>
+                                {model_info.get('git_commit_message', 'No commit message')}
+                            </div>
+                            <div style='font-size: 0.8rem; margin-top: 0.25rem;'>
+                                by {model_info.get('git_commit_author', 'Unknown')}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -303,14 +375,14 @@ def display_model_info(model_info):
     
     with tab4:
         st.markdown("### Model Configuration")
-        # Display version information at the top of the configuration tab
-        version_col1, version_col2 = st.columns(2)
-        with version_col1:
-            st.metric("Model Version", model_info["Model Version"])
-        with version_col2:
-            st.metric("Last Updated", model_info["Last Updated"])
+        # # Display version information at the top of the configuration tab
+        # version_col1, version_col2 = st.columns(2)
+        # with version_col1:
+        #     st.metric("Model Version", model_info["Model Version"])
+        # with version_col2:
+        #     st.metric("Last Updated", model_info["Last Updated"])
         
-        st.markdown("---")  # Add separator
+        # st.markdown("---")  # Add separator
         
         # Display other configuration information
         st.json({

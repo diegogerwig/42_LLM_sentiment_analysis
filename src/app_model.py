@@ -85,9 +85,22 @@ def load_model():
         raise e
 
 def get_model_info(model, tokenizer):
-    """Gets comprehensive information about the model and tokenizer"""
+    """Gets comprehensive information about the model and tokenizer including commit info"""
     try:
+        # Get HuggingFace commit information
+        hf_commit_info = get_last_commit_info(HF_MODEL_PATH)
+        
         model_info = {
+            # Version Information
+            "Model Version": getattr(model.config, "model_version", "Unknown"),
+            "Last Updated": getattr(model.config, "model_timestamp", "Unknown"),
+            
+            # Commit Information from Hugging Face
+            "hf_commit_hash": hf_commit_info['hash'][:7] if hf_commit_info else "N/A",
+            "hf_commit_message": hf_commit_info['message'] if hf_commit_info else "No commit message",
+            "hf_commit_author": hf_commit_info['author'] if hf_commit_info else "Unknown",
+            "hf_commit_date": hf_commit_info['date'].strftime('%Y-%m-%d %H:%M:%S') if hf_commit_info else "Unknown",
+            
             # Architecture Information
             "Model Type": model.config.model_type,
             "Base Model": model.config._name_or_path,
@@ -106,10 +119,6 @@ def get_model_info(model, tokenizer):
             "Problem Type": getattr(model.config, "problem_type", "Not specified"),
             "Number of Labels": model.config.num_labels,
             
-            # Version Information - Now using the same keys as the stored attributes
-            "Model Version": getattr(model.config, "model_version", "Unknown"),
-            "Last Updated": getattr(model.config, "model_timestamp", "Unknown"),
-            
             # Tokenizer Information
             "Tokenizer Type": type(tokenizer).__name__,
             "Vocabulary Size (Tokenizer)": len(tokenizer),
@@ -119,6 +128,7 @@ def get_model_info(model, tokenizer):
             "Special Tokens": {}
         }
         
+        # Add special tokens information
         if hasattr(tokenizer, 'special_tokens_map'):
             special_tokens = {}
             for key, value in tokenizer.special_tokens_map.items():
