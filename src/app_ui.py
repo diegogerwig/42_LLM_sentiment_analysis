@@ -204,10 +204,9 @@ def display_influence_analysis(token_data):
             )
 
 def display_model_info(model_info):
-    """Displays detailed model information with commit details"""
+    """Displays model information with version details"""
     st.markdown("## Model Information")
     
-    # Enhanced version info display with commit information
     st.markdown(
         f"""
         <div style='
@@ -236,7 +235,7 @@ def display_model_info(model_info):
                         border-radius: 0.25rem;
                     '>
                         <span style='color: #ffffff; font-family: monospace;'>
-                            {model_info['hf_commit_hash']}
+                            {getattr(model_info, 'model_version', 'v1.0.0')}
                         </span>
                     </div>
                 </div>
@@ -253,7 +252,7 @@ def display_model_info(model_info):
                         border-radius: 0.25rem;
                     '>
                         <span style='color: #ffffff;'>
-                            {model_info['hf_last_updated']}
+                            {getattr(model_info, 'model_timestamp', datetime.now(timezone(timedelta(hours=1))).strftime('%Y-%m-%d %H:%M:%S'))}
                         </span>
                     </div>
                 </div>
@@ -263,7 +262,7 @@ def display_model_info(model_info):
                 padding-top: 0.75rem;
             '>
                 <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
-                    Latest Commit Details
+                    Version Details
                 </h3>
                 <div style='
                     background: rgba(255, 255, 255, 0.1);
@@ -272,10 +271,10 @@ def display_model_info(model_info):
                 '>
                     <div style='color: #ffffff;'>
                         <div style='font-size: 0.9rem; color: #a0aec0; margin-bottom: 0.25rem;'>
-                            {model_info['hf_commit_message']}
+                            {getattr(model_info, 'version_notes', 'Sentiment Analysis Model - Initial Release')}
                         </div>
                         <div style='font-size: 0.8rem; margin-top: 0.25rem;'>
-                            by <span style='color: #4299e1;'>{model_info['hf_commit_author']}</span>
+                            by <span style='color: #4299e1;'>{getattr(model_info, 'model_author', 'AI Team')}</span>
                         </div>
                     </div>
                 </div>

@@ -45,32 +45,15 @@ def get_last_commit_info(repo_id):
 
 @st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
 def load_model():
-    """Loads the model and tokenizer with debug information"""
+    """Loads the model and tokenizer with version information"""
     try:
-        print(f"Using HF_MODEL_PATH: {HF_MODEL_PATH}")
         is_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
 
-        # Get HuggingFace commit information
-        hf_commit_info = get_last_commit_info(HF_MODEL_PATH)
-        print(f"Retrieved commit info: {hf_commit_info}")
-        
-        # Create timezone aware datetime for UTC+1
+        # Store fixed version information
+        model_version = "v1.0.0"  # o la versión que corresponda
         tz = timezone(timedelta(hours=1))
         current_time = datetime.now(tz)
-        
-        if hf_commit_info:
-            model_version = f"{hf_commit_info['hash'][:7]}"
-            commit_date = hf_commit_info['date']
-            model_timestamp = commit_date.strftime('%Y-%m-%d %H:%M:%S')
-            commit_author = hf_commit_info['author']
-            commit_message = hf_commit_info['message']
-            print(f"Using commit info - Version: {model_version}, Time: {model_timestamp}")
-        else:
-            model_version = "Unknown"
-            model_timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
-            commit_author = "Unknown"
-            commit_message = "No commit message available"
-            print("Using default values due to missing commit info")
+        model_timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
 
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
@@ -93,12 +76,11 @@ def load_model():
             local_files_only=local_files
         )
         
-        # Store version info in model config
+        # Store version info directly in model config
         model.config.model_version = model_version
         model.config.model_timestamp = model_timestamp
-        model.config.commit_author = commit_author
-        model.config.commit_message = commit_message
-        model.config.commit_hash = hf_commit_info['hash'] if hf_commit_info else "Unknown"
+        model.config.version_notes = "Sentiment Analysis Model - Initial Release"
+        model.config.model_author = "Your Name/Organization"  # Personaliza esto
         
         return model, tokenizer
 
