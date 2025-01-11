@@ -6,20 +6,44 @@ import os
 from datetime import datetime
 from app_config import LOCAL_MODEL_PATH, HF_MODEL_PATH, MAX_LENGTH
 
-def get_model_safetensors_date(model_path):
-    """Gets the modification date of model.safetensors file in the model directory"""
-    if os.path.isfile(model_path):
-        # If model_path is directly the file we're looking for
-        if os.path.basename(model_path) == "model.safetensors":
-            return os.path.getmtime(model_path)
+import os
+from datetime import datetime
+
+from huggingface_hub import hf_hub_download, model_info
+
+def get_safetensors_last_modified(repo_id):
+    """
+    Gets the last modified date of model.safetensors from a Hugging Face repo
+    
+    Args:
+        repo_id (str): The repository ID (e.g., "runwayml/stable-diffusion-v1-5")
+    """
+    try:
+        # Get model info
+        info = model_info(repo_id)
+        
+        # Find the model.safetensors file in the sibling files
+        for file in info.siblings:
+            if file.rfilename == "model.safetensors":
+                return file.lastModified
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error accessing model info: {e}")
         return None
     
-    # Search for model.safetensors in the directory and its subdirectories
+    print(f"Searching in directory: {model_path}")
     for root, dirs, files in os.walk(model_path):
         if "model.safetensors" in files:
             file_path = os.path.join(root, "model.safetensors")
-            return os.path.getmtime(file_path)
+            timestamp = os.path.getmtime(file_path)
+            date = datetime.fromtimestamp(timestamp)
+            print(f"File found at: {file_path}")
+            print(f"Modification date: {date}")
+            return timestamp
     
+    print("model.safetensors file not found")
     return None
 
 @st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
