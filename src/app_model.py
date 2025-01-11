@@ -39,29 +39,14 @@ def load_model():
         # Get commit information
         api = HfApi()
         try:
-            print(f"Fetching commits for repo: {HF_MODEL_PATH}")  # Debug print
-            commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
-            print(f"Number of commits found: {len(commits)}")  # Debug print
-            
-            if commits:
-                latest_commit = commits[0]
-                print(f"Latest commit ID: {latest_commit.commit_id}")  # Debug print
-                print(f"Latest commit date: {latest_commit.created_at}")  # Debug print
-                print(f"Latest commit author: {latest_commit.author}")  # Debug print
-                
-                # Store the information directly
-                version = f"Commit {latest_commit.commit_id[:7]} by {latest_commit.author}"
-                timestamp = latest_commit.created_at
-                print(f"Setting version to: {version}")  # Debug print
-                print(f"Setting timestamp to: {timestamp}")  # Debug print
-            else:
-                print("No commits found")  # Debug print
-                version = "No commits found"
-                timestamp = "No commits found"
+            # Get just the latest commit
+            last_commit = api.list_repo_commits(repo_id=HF_MODEL_PATH, max_results=1)[0]
+            model_version = f"{last_commit.commit_id[:7]}"
+            model_timestamp = last_commit.created_at
         except Exception as e:
-            print(f"Error fetching commits: {str(e)}")  # Debug print
-            version = "Unknown"
-            timestamp = "Unknown"
+            print(f"Error getting commit info: {str(e)}")
+            model_version = "Latest version"
+            model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
@@ -69,8 +54,6 @@ def load_model():
         else:
             model_path = HF_MODEL_PATH
             local_files = False
-
-        print(f"Loading model from: {model_path}")  # Debug print
 
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
@@ -86,18 +69,64 @@ def load_model():
             local_files_only=local_files
         )
         
-        # Set version info as attributes
-        setattr(model, 'model_version', version)
-        setattr(model, 'model_timestamp', timestamp)
-        print(f"Final version set: {model.model_version}")  # Debug print
-        print(f"Final timestamp set: {model.model_timestamp}")  # Debug print
+        # Store version info directly in the model
+        model.version = model_version
+        model.timestamp = model_timestamp
         
         return model, tokenizer
 
     except Exception as e:
-        print(f"Final error: {str(e)}")  # Debug print
         st.error(f"Error loading model: {str(e)}")
         raise e
+
+def get_model_info(model, tokenizer):
+    """Gets comprehensive information about the model and tokenizer"""
+    try:
+        model_info = {
+            # Architecture Information
+            "Model Type": model.config.model_type,
+            "Base Model": model.config._name_or_path,
+            "Hidden Size": model.config.hidden_size,
+            "Number of Hidden Layers": model.config.num_hidden_layers,
+            "Number of Attention Heads": model.config.num_attention_heads,
+            "Max Position Embeddings": model.config.max_position_embeddings,
+            
+            # Model Parameters
+            "Number of Parameters": sum(p.numel() for p in model.parameters()),
+            "Trainable Parameters": sum(p.numel() for p in model.parameters() if p.requires_grad),
+            
+            # Model Configuration
+            "Vocabulary Size": model.config.vocab_size,
+            "Activation Function": getattr(model.config, "activation", "gelu"),
+            "Problem Type": getattr(model.config, "problem_type", "Not specified"),
+            "Number of Labels": model.config.num_labels,
+            
+            # Version Information - Simplified
+            "Version": getattr(model, "version", "Unknown"),
+            "Last Updated": getattr(model, "timestamp", "Unknown"),
+            
+            # Tokenizer Information
+            "Tokenizer Type": type(tokenizer).__name__,
+            "Vocabulary Size (Tokenizer)": len(tokenizer),
+            "Model Max Length": tokenizer.model_max_length,
+            "Padding Token": tokenizer.pad_token,
+            "Unknown Token": tokenizer.unk_token,
+            "Special Tokens": {}
+        }
+        
+        if hasattr(tokenizer, 'special_tokens_map'):
+            special_tokens = {}
+            for key, value in tokenizer.special_tokens_map.items():
+                if isinstance(value, str):
+                    special_tokens[key] = value
+                elif isinstance(value, list):
+                    special_tokens[key] = ', '.join(value)
+            model_info["Special Tokens"] = special_tokens
+        
+        return model_info
+    except Exception as e:
+        st.error(f"Error getting model information: {str(e)}")
+        return None
 
 def predict_sentiment(model, text_input, tokenizer):
     """Performs sentiment analysis"""
@@ -157,55 +186,4 @@ def calculate_token_attributions(model, tokenizer, text):
         return attribution_scores.tolist()
     except Exception as e:
         st.error(f"Error calculating attributions: {str(e)}")
-        return None
-
-def get_model_info(model, tokenizer):
-    """Gets comprehensive information about the model and tokenizer"""
-    try:
-        model_info = {
-            # Architecture Information
-            "Model Type": model.config.model_type,
-            "Base Model": model.config._name_or_path,
-            "Hidden Size": model.config.hidden_size,
-            "Number of Hidden Layers": model.config.num_hidden_layers,
-            "Number of Attention Heads": model.config.num_attention_heads,
-            "Max Position Embeddings": model.config.max_position_embeddings,
-            
-            # Model Parameters
-            "Number of Parameters": sum(p.numel() for p in model.parameters()),
-            "Trainable Parameters": sum(p.numel() for p in model.parameters() if p.requires_grad),
-            
-            # Model Configuration
-            "Vocabulary Size": model.config.vocab_size,
-            "Activation Function": getattr(model.config, "activation", "gelu"),
-            "Problem Type": getattr(model.config, "problem_type", "Not specified"),
-            "Number of Labels": model.config.num_labels,
-            
-            # Version Information - Changed to use model attributes instead of config
-            "Model Version": getattr(model, "model_version", "Unknown"),
-            "Last Updated": getattr(model, "model_timestamp", "Unknown"),
-            
-            # Tokenizer Information
-            "Tokenizer Type": type(tokenizer).__name__,
-            "Vocabulary Size (Tokenizer)": len(tokenizer),
-            "Model Max Length": tokenizer.model_max_length,
-            "Padding Token": tokenizer.pad_token,
-            "Unknown Token": tokenizer.unk_token,
-            "Special Tokens": {}
-        }
-        
-        # Get special tokens map
-        if hasattr(tokenizer, 'special_tokens_map'):
-            special_tokens = {}
-            for key, value in tokenizer.special_tokens_map.items():
-                if isinstance(value, str):
-                    special_tokens[key] = value
-                elif isinstance(value, list):
-                    special_tokens[key] = ', '.join(value)
-            model_info["Special Tokens"] = special_tokens
-        
-        return model_info
-    except Exception as e:
-        print(f"Debug - Error details: {str(e)}")  # Added debug print
-        st.error(f"Error getting model information: {str(e)}")
         return None
