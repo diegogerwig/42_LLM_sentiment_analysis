@@ -180,9 +180,9 @@ def get_model_info(model, tokenizer):
             "Problem Type": getattr(model.config, "problem_type", "Not specified"),
             "Number of Labels": model.config.num_labels,
             
-            # Version Information
-            "Version": model.config.model_version,
-            "Last Updated": model.config.model_timestamp,
+            # Version Information (Changed these lines to match what we set)
+            "Version": getattr(model.config, "model_version", "Unknown"),
+            "Last Updated": getattr(model.config, "model_timestamp", "Unknown"),
             
             # Tokenizer Information
             "Tokenizer Type": type(tokenizer).__name__,
@@ -205,5 +205,5 @@ def get_model_info(model, tokenizer):
         
         return model_info
     except Exception as e:
-        st.error(f"Error getting model information: {str(e)}")
+        st.error(f"Error getting model information: {e}")
         return None
