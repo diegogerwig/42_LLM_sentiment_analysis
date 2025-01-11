@@ -100,18 +100,28 @@ def load_model():
         raise e
 
 def get_model_info(model, tokenizer):
-    """Gets comprehensive information about the model and tokenizer including commit info"""
+    """Gets comprehensive information about the model and tokenizer"""
     try:
-        model_info = {
-            # Version Information from model config
-            "Model Version": getattr(model.config, "model_version", "Unknown"),
-            "Last Updated": getattr(model.config, "model_timestamp", "Unknown"),
+        # Get HuggingFace commit information
+        api = HfApi()
+        commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
+        
+        if commits and commits[0]:
+            last_commit = commits[0]
+            model_version = last_commit.commit_id[:7]
             
-            # Commit Information from model config
-            "hf_commit_hash": getattr(model.config, "commit_hash", "Unknown")[:7],
-            "hf_commit_message": getattr(model.config, "commit_message", "No commit message available"),
-            "hf_commit_author": getattr(model.config, "commit_author", "Unknown"),
-            "hf_last_updated": getattr(model.config, "model_timestamp", "Unknown"),
+            # Convert the date to UTC+1
+            commit_date = last_commit.created_at
+            tz = timezone(timedelta(hours=1))
+            local_date = commit_date.astimezone(tz)
+            last_updated = local_date.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            model_version = "Unknown"
+            last_updated = "Unknown"
+        
+        model_info = {
+            "Model Version": model_version,
+            "Last Updated": last_updated,
             
             # Architecture Information
             "Model Type": model.config.model_type,

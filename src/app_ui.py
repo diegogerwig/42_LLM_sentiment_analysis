@@ -249,7 +249,7 @@ def display_model_info(model_info):
                         border-radius: 0.25rem;
                     '>
                         <span style='color: #ffffff; font-family: monospace;'>
-                            {getattr(model_info.config, 'model_version', 'Unknown')}
+                            {model_info.get('Model Version', 'Unknown')}
                         </span>
                     </div>
                 </div>
@@ -263,7 +263,7 @@ def display_model_info(model_info):
                         border-radius: 0.25rem;
                     '>
                         <span style='color: #ffffff;'>
-                            {getattr(model_info.config, 'model_timestamp', 'Unknown')}
+                            {model_info.get('Last Updated', 'Unknown')}
                         </span>
                     </div>
                 </div>
