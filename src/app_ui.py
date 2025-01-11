@@ -214,7 +214,7 @@ def display_model_info(model_info):
     # Get GitHub commit info
     github_info = get_github_last_commit('diegogerwig', '42_LLM_sentiment_analysis')
     
-    # Main model info display
+    # HF Model Section
     st.markdown(
         f"""
         <div style='
@@ -228,7 +228,6 @@ def display_model_info(model_info):
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
                 gap: 1rem;
-                margin-bottom: 0.75rem;
             '>
                 <div>
                     <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
@@ -259,11 +258,21 @@ def display_model_info(model_info):
                     </div>
                 </div>
             </div>
-            
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # GitHub App Section
+    if github_info:
+        st.markdown(
+            f"""
             <div style='
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-                padding-top: 0.75rem;
-                margin-top: 0.75rem;
+                padding: 1rem 1.5rem;
+                background-color: #2d3748;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+                color: white;
             '>
                 <div>
                     <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
@@ -280,7 +289,7 @@ def display_model_info(model_info):
                             border-radius: 0.25rem;
                         '>
                             <span style='color: #ffffff; font-family: monospace;'>
-                                {github_info['hash'] if github_info else 'Unknown'}
+                                {github_info['hash']}
                             </span>
                         </div>
                         <div style='
@@ -289,16 +298,24 @@ def display_model_info(model_info):
                             border-radius: 0.25rem;
                         '>
                             <span style='color: #ffffff;'>
-                                {github_info['date'] if github_info else 'Unknown'}
+                                {github_info['date']}
                             </span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+            """,
+            unsafe_allow_html=True
+        )
+    
+    # Debug Info
+    with st.expander("Debug Info", expanded=False):
+        if github_info:
+            st.write("GitHub Commit Info:")
+            st.write(f"- Hash: {github_info['hash']}")
+            st.write(f"- Date: {github_info['date']}")
+            st.write(f"- Message: {github_info['message']}")
+            st.write(f"- Author: {github_info['author']}")
     
     # Create tabs for different categories of information
     tab1, tab2, tab3, tab4 = st.tabs([
