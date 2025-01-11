@@ -11,10 +11,7 @@ def get_last_commit_info(repo_id):
     """
     Gets the last commit information from a Hugging Face repo
     
-    Args:
-        repo_id (str): The repository ID
-    Returns:
-        dict: Commit information including hash, date, author and message
+
     """
     try:
         api = HfApi()
@@ -35,8 +32,7 @@ def get_last_commit_info(repo_id):
         print(f"Error accessing commit history: {e}")
         return None
 
-Let's fix this by making sure we're looking at the exact error and correcting it. Let's modify both functions:
-pythonCopy@st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
+@st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
 def load_model():
     """Loads the model and tokenizer"""
     try:
