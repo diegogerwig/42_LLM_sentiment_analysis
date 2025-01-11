@@ -49,11 +49,27 @@ def load_model():
     try:
         is_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
 
-        # Store fixed version information
-        model_version = "v1.0.0"  # o la versión que corresponda
-        tz = timezone(timedelta(hours=1))
-        current_time = datetime.now(tz)
-        model_timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
+        # Get HuggingFace commit information
+        api = HfApi()
+        commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
+        
+        if commits:
+            last_commit = commits[0]
+            model_version = last_commit.commit_id[:7]
+            
+            # Convert commit date from UTC to UTC+1
+            commit_date = datetime.fromisoformat(last_commit.created_at)
+            tz = timezone(timedelta(hours=1))
+            local_date = commit_date.astimezone(tz)
+            model_timestamp = local_date.strftime('%Y-%m-%d %H:%M:%S')
+            
+            commit_author = last_commit.author
+            commit_message = last_commit.title
+        else:
+            model_version = "Unknown"
+            model_timestamp = "Unknown"
+            commit_author = "Unknown"
+            commit_message = "No commit message"
 
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
@@ -76,11 +92,11 @@ def load_model():
             local_files_only=local_files
         )
         
-        # Store version info directly in model config
+        # Store version info in model config
         model.config.model_version = model_version
         model.config.model_timestamp = model_timestamp
-        model.config.version_notes = "Sentiment Analysis Model - Initial Release"
-        model.config.model_author = "Your Name/Organization"  # Personaliza esto
+        model.config.commit_author = commit_author
+        model.config.commit_message = commit_message
         
         return model, tokenizer
 
