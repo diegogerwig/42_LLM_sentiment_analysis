@@ -35,34 +35,38 @@ def get_last_commit_info(repo_id):
         print(f"Error accessing commit history: {e}")
         return None
 
-@st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
+Let's fix this by making sure we're looking at the exact error and correcting it. Let's modify both functions:
+pythonCopy@st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
 def load_model():
     """Loads the model and tokenizer"""
     try:
         is_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
 
-        # Get commit information first
+        # Get commit information
         api = HfApi()
         try:
             commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
             if commits and len(commits) > 0:
                 latest_commit = commits[0]
-                # Convert UTC to UTC+1
                 commit_date = datetime.fromisoformat(latest_commit.created_at.replace('Z', '+00:00'))
                 local_date = commit_date + timedelta(hours=1)
                 
+                # Store these values for later use
                 model_version = f"Commit {latest_commit.commit_id[:7]} by {latest_commit.author}"
                 model_timestamp = local_date.strftime('%Y-%m-%d %H:%M:%S')
+                print(f"Found version: {model_version}")
+                print(f"Found timestamp: {model_timestamp}")
             else:
                 model_version = "Unknown"
                 model_timestamp = "Unknown"
+                print("No commits found")
                 
         except Exception as e:
             print(f"Error getting commits: {str(e)}")
             model_version = "Error fetching version"
             model_timestamp = "Error fetching timestamp"
 
-        # Set up model path
+        # Model loading
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
             local_files = True
@@ -70,10 +74,6 @@ def load_model():
             model_path = HF_MODEL_PATH
             local_files = False
 
-        print(f"Loading model from: {model_path}")
-        print(f"Version: {model_version}")
-        print(f"Timestamp: {model_timestamp}")
-        
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
             trust_remote_code=True,
@@ -88,9 +88,9 @@ def load_model():
             local_files_only=local_files
         )
         
-        # Set the version info directly in the config
-        model.config.model_version = model_version
-        model.config.model_timestamp = model_timestamp
+        # Set custom attributes
+        model.model_version = model_version
+        model.model_timestamp = model_timestamp
         
         return model, tokenizer
 
@@ -180,9 +180,9 @@ def get_model_info(model, tokenizer):
             "Problem Type": getattr(model.config, "problem_type", "Not specified"),
             "Number of Labels": model.config.num_labels,
             
-            # Version Information (Changed these lines to match what we set)
-            "Version": getattr(model.config, "model_version", "Unknown"),
-            "Last Updated": getattr(model.config, "model_timestamp", "Unknown"),
+            # Version Information - Changed to use model attributes instead of config
+            "Model Version": getattr(model, "model_version", "Unknown"),
+            "Last Updated": getattr(model, "model_timestamp", "Unknown"),
             
             # Tokenizer Information
             "Tokenizer Type": type(tokenizer).__name__,
@@ -205,5 +205,6 @@ def get_model_info(model, tokenizer):
         
         return model_info
     except Exception as e:
-        st.error(f"Error getting model information: {e}")
+        print(f"Debug - Error details: {str(e)}")  # Added debug print
+        st.error(f"Error getting model information: {str(e)}")
         return None
