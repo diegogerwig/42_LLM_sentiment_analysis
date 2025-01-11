@@ -207,21 +207,11 @@ def display_influence_analysis(token_data):
             )
 
 def display_model_info(model_info):
-    """Displays model information with debug info"""
+    """Displays model information with both HF and GitHub updates"""
     st.markdown("## Model Information")
     
-    # # Add debug information in a collapsible section
-    # with st.expander("Debug Information"):
-    #     st.write(f"HF_MODEL_PATH: {HF_MODEL_PATH}")
-    #     try:
-    #         api = HfApi()
-    #         commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
-    #         if commits:
-    #             st.write("Latest commit found:")
-    #             st.write(f"- Hash: {commits[0].commit_id}")
-    #             st.write(f"- Date: {commits[0].created_at}")
-    #     except Exception as e:
-    #         st.write(f"Error getting commits: {str(e)}")
+    # Get GitHub commit info
+    github_info = get_github_last_commit('your-username', 'your-repo')
     
     # Main model info display
     st.markdown(
@@ -241,7 +231,7 @@ def display_model_info(model_info):
             '>
                 <div>
                     <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
-                        Model Version
+                        Model Version (HF)
                     </h3>
                     <div style='
                         background: rgba(255, 255, 255, 0.1);
@@ -255,7 +245,7 @@ def display_model_info(model_info):
                 </div>
                 <div>
                     <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
-                        Last Updated
+                        Model Updated (HF)
                     </h3>
                     <div style='
                         background: rgba(255, 255, 255, 0.1);
@@ -265,6 +255,44 @@ def display_model_info(model_info):
                         <span style='color: #ffffff;'>
                             {model_info.get('Last Updated', 'Unknown')}
                         </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style='
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                padding-top: 0.75rem;
+                margin-top: 0.75rem;
+            '>
+                <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
+                    App Version
+                </h3>
+                <div style='
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 1rem;
+                '>
+                    <div>
+                        <div style='
+                            background: rgba(255, 255, 255, 0.1);
+                            padding: 0.5rem;
+                            border-radius: 0.25rem;
+                        '>
+                            <span style='color: #ffffff; font-family: monospace;'>
+                                {github_info['hash'] if github_info else 'Unknown'}
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <div style='
+                            background: rgba(255, 255, 255, 0.1);
+                            padding: 0.5rem;
+                            border-radius: 0.25rem;
+                        '>
+                            <span style='color: #ffffff;'>
+                                {github_info['date'] if github_info else 'Unknown'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

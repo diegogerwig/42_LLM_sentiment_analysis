@@ -6,6 +6,41 @@ import os
 from app_config import LOCAL_MODEL_PATH, HF_MODEL_PATH, MAX_LENGTH
 from huggingface_hub import hf_hub_url, model_info, HfApi
 from datetime import datetime, timezone, timedelta
+import requests
+
+def get_github_last_commit(repo_owner, repo_name, token=None):
+    """
+    Gets the last commit information from a GitHub repo
+    """
+    try:
+        headers = {}
+        if token:
+            headers['Authorization'] = f'token {token}'
+            
+        url = f'https://api.github.com/repos/{repo_owner}/{repo_name}/commits'
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            commits = response.json()
+            if commits:
+                last_commit = commits[0]
+                # Convert GitHub timestamp to UTC+1
+                commit_date = datetime.strptime(last_commit['commit']['committer']['date'], 
+                                             '%Y-%m-%dT%H:%M:%SZ')
+                commit_date = commit_date.replace(tzinfo=timezone.utc)
+                tz = timezone(timedelta(hours=1))
+                local_date = commit_date.astimezone(tz)
+                
+                return {
+                    'hash': last_commit['sha'][:7],
+                    'date': local_date.strftime('%Y-%m-%d %H:%M:%S'),
+                    'message': last_commit['commit']['message'],
+                    'author': last_commit['commit']['author']['name']
+                }
+        return None
+    except Exception as e:
+        print(f"Error getting GitHub commit: {str(e)}")
+        return None
 
 def get_last_commit_info(repo_id):
     """
