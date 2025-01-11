@@ -34,7 +34,7 @@ def load_model():
             model_path = LOCAL_MODEL_PATH
             local_files = True
             # Get latest file modification timestamp
-            timestamp = get_latest_file_date(LOCAL_MODEL_PATH)
+            timestamp = get_model_safetensors_date(LOCAL_MODEL_PATH)
             if timestamp:
                 model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
             model_version = f"Local Model"
