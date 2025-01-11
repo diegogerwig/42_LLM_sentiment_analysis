@@ -40,8 +40,8 @@ def load_model():
     """Loads the model and tokenizer"""
     try:
         is_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
-        model_version = None
-        model_timestamp = None
+        model_version = "Unknown"
+        model_timestamp = "Unknown"
 
         def convert_to_utc_plus_1(dt):
             if isinstance(dt, str):
@@ -49,24 +49,26 @@ def load_model():
             tz = timezone(timedelta(hours=1))
             return dt.astimezone(tz).strftime('%Y-%m-%d %H:%M:%S')
 
-        # Get explicit model information first
+        # Get commit information
         api = HfApi()
-        print("Fetching commits...")  # Debug print
+        print(f"Fetching commits for: {HF_MODEL_PATH}")
         
         try:
-            # Disable cache for this call to always get fresh commit info
-            commits = api.list_repo_commits(repo_id=HF_MODEL_PATH, cache_dir=None)
-            if commits:
-                latest_commit = commits[0]  # Get the most recent commit
-                print(f"Latest commit found: {latest_commit.title}")  # Debug print
-                print(f"Commit date: {latest_commit.created_at}")  # Debug print
+            commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
+            if commits and len(commits) > 0:
+                latest_commit = commits[0]
+                print(f"Found commit: {latest_commit.commit_id}")
                 
-                model_timestamp = convert_to_utc_plus_1(latest_commit.created_at)
+                # Update the version and timestamp
                 model_version = f"{latest_commit.commit_id[:7]} by {latest_commit.author}"
+                model_timestamp = convert_to_utc_plus_1(latest_commit.created_at)
+                
+                print(f"Version set to: {model_version}")
+                print(f"Timestamp set to: {model_timestamp}")
             else:
-                print("No commits found")  # Debug print
+                print("No commits found")
         except Exception as e:
-            print(f"Error fetching commits: {e}")  # Debug print
+            print(f"Error getting commits: {str(e)}")
 
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
@@ -76,10 +78,7 @@ def load_model():
             local_files = False
 
         print(f"Loading model from: {model_path}")
-        print(f"Model timestamp (UTC+1): {model_timestamp}")
-        print(f"Model version: {model_version}")
-
-        # Rest of your model loading code...
+        
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
             trust_remote_code=True,
@@ -94,9 +93,15 @@ def load_model():
             local_files_only=local_files
         )
         
-        # Store version info in model config
-        model.config.model_version = model_version
-        model.config.model_timestamp = model_timestamp
+        # Explicitly set the version info
+        if not hasattr(model.config, 'model_version'):
+            model.config.model_version = model_version
+        
+        if not hasattr(model.config, 'model_timestamp'):
+            model.config.model_timestamp = model_timestamp
+            
+        print(f"Final model version: {model.config.model_version}")
+        print(f"Final model timestamp: {model.config.model_timestamp}")
         
         return model, tokenizer
 
