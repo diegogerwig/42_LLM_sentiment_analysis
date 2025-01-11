@@ -6,6 +6,7 @@ from app_utils import calculate_background_color
 from datetime import datetime, timezone, timedelta
 from app_config import HF_MODEL_PATH
 from huggingface_hub import HfApi
+from app_model import get_github_last_commit
 
 def render_sidebar():
     """Renders the sidebar content"""
