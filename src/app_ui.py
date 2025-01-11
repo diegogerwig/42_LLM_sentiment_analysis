@@ -212,7 +212,7 @@ def display_model_info(model_info):
     st.markdown("## Model Information")
     
     # Get GitHub commit info
-    github_info = get_github_last_commit('your-username', 'your-repo')
+    github_info = get_github_last_commit('diegogerwig', 'sentiment-analysis')  # Usando los mismos valores que en HF
     
     # Main model info display
     st.markdown(
@@ -266,7 +266,7 @@ def display_model_info(model_info):
                 margin-top: 0.75rem;
             '>
                 <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
-                    App Version
+                    App Version (GitHub)
                 </h3>
                 <div style='
                     display: grid;
