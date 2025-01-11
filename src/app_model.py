@@ -18,10 +18,15 @@ def get_github_last_commit(repo_owner, repo_name, token=None):
             headers['Authorization'] = f'token {token}'
             
         url = f'https://api.github.com/repos/{repo_owner}/{repo_name}/commits'
+        st.write(f"Trying to fetch GitHub commits from: {url}")  # Debug log
+        
         response = requests.get(url, headers=headers)
+        st.write(f"GitHub API Response status: {response.status_code}")  # Debug log
         
         if response.status_code == 200:
             commits = response.json()
+            st.write(f"Found {len(commits)} commits")  # Debug log
+            
             if commits:
                 last_commit = commits[0]
                 # Convert GitHub timestamp to UTC+1
@@ -37,9 +42,13 @@ def get_github_last_commit(repo_owner, repo_name, token=None):
                     'message': last_commit['commit']['message'],
                     'author': last_commit['commit']['author']['name']
                 }
+                
+        st.write(f"Response content: {response.text[:500]}")  # Debug log if something went wrong
         return None
+        
     except Exception as e:
-        print(f"Error getting GitHub commit: {str(e)}")
+        st.write(f"Error accessing GitHub: {str(e)}")  # Debug log
+        st.write(f"Error type: {type(e)}")  # Debug log
         return None
 
 def get_last_commit_info(repo_id):
