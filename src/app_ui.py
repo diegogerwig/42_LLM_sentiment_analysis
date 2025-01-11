@@ -4,6 +4,8 @@ import streamlit as st
 from app_config import EXAMPLE_REVIEWS
 from app_utils import calculate_background_color
 from datetime import datetime, timezone, timedelta
+from app_config import HF_MODEL_PATH
+from huggingface_hub import HfApi
 
 def render_sidebar():
     """Renders the sidebar content"""
