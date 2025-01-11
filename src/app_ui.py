@@ -210,26 +210,20 @@ def display_model_info(model_info):
     """Displays model information with debug info"""
     st.markdown("## Model Information")
     
-    # Add debug information
-    st.write("### Debug Information")
-    st.write(f"HF_MODEL_PATH: {HF_MODEL_PATH}")
+    # Add debug information in a collapsible section
+    with st.expander("Debug Information"):
+        st.write(f"HF_MODEL_PATH: {HF_MODEL_PATH}")
+        try:
+            api = HfApi()
+            commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
+            if commits:
+                st.write("Latest commit found:")
+                st.write(f"- Hash: {commits[0].commit_id}")
+                st.write(f"- Date: {commits[0].created_at}")
+        except Exception as e:
+            st.write(f"Error getting commits: {str(e)}")
     
-    # Try to get commit info directly
-    try:
-        api = HfApi()
-        commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
-        if commits:
-            st.write("Latest commit found:")
-            st.write(f"- Hash: {commits[0].commit_id}")
-            st.write(f"- Date: {commits[0].created_at}")
-            st.write(f"- Author: {commits[0].author}")
-            st.write(f"- Message: {commits[0].title}")
-        else:
-            st.write("No commits found")
-    except Exception as e:
-        st.write(f"Error getting commits: {str(e)}")
-    
-    # Rest of your existing model info display...
+    # Main model info display
     st.markdown(
         f"""
         <div style='
@@ -255,7 +249,7 @@ def display_model_info(model_info):
                         border-radius: 0.25rem;
                     '>
                         <span style='color: #ffffff; font-family: monospace;'>
-                            {getattr(model_info, 'model_version', 'v1.0.0')}
+                            {getattr(model_info.config, 'model_version', 'Unknown')}
                         </span>
                     </div>
                 </div>
@@ -269,14 +263,14 @@ def display_model_info(model_info):
                         border-radius: 0.25rem;
                     '>
                         <span style='color: #ffffff;'>
-                            {getattr(model_info, 'model_timestamp', 'Unknown')}
+                            {getattr(model_info.config, 'model_timestamp', 'Unknown')}
                         </span>
                     </div>
                 </div>
             </div>
         </div>
-        """
-        , unsafe_allow_html=True
+        """,
+        unsafe_allow_html=True
     )
     
     # Create tabs for different categories of information
