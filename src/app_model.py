@@ -42,11 +42,16 @@ def load_model():
             # Get just the latest commit
             last_commit = api.list_repo_commits(repo_id=HF_MODEL_PATH, max_results=1)[0]
             model_version = f"{last_commit.commit_id[:7]}"
-            model_timestamp = last_commit.created_at
+            
+            # Convert UTC to UTC+1
+            commit_date = datetime.fromisoformat(last_commit.created_at.replace('Z', '+00:00'))
+            local_date = commit_date + timedelta(hours=1)
+            model_timestamp = local_date.strftime('%Y-%m-%d %H:%M:%S')
+            
         except Exception as e:
             print(f"Error getting commit info: {str(e)}")
             model_version = "Latest version"
-            model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            model_timestamp = (datetime.now() + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
 
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
