@@ -69,9 +69,9 @@ def load_model():
             local_files_only=local_files
         )
         
-        # Store version info directly in the model
-        model.version = model_version
-        model.timestamp = model_timestamp
+        # Store version info directly in the model config
+        model.config.model_version = model_version
+        model.config.model_timestamp = model_timestamp
         
         return model, tokenizer
 
@@ -101,9 +101,9 @@ def get_model_info(model, tokenizer):
             "Problem Type": getattr(model.config, "problem_type", "Not specified"),
             "Number of Labels": model.config.num_labels,
             
-            # Version Information - Simplified
-            "Version": getattr(model, "version", "Unknown"),
-            "Last Updated": getattr(model, "timestamp", "Unknown"),
+            # Version Information - Now using the same keys as the stored attributes
+            "Model Version": getattr(model.config, "model_version", "Unknown"),
+            "Last Updated": getattr(model.config, "model_timestamp", "Unknown"),
             
             # Tokenizer Information
             "Tokenizer Type": type(tokenizer).__name__,
