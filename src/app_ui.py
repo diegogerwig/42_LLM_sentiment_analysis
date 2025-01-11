@@ -205,9 +205,29 @@ def display_influence_analysis(token_data):
             )
 
 def display_model_info(model_info):
-    """Displays model information with version details"""
+    """Displays model information with debug info"""
     st.markdown("## Model Information")
     
+    # Add debug information
+    st.write("### Debug Information")
+    st.write(f"HF_MODEL_PATH: {HF_MODEL_PATH}")
+    
+    # Try to get commit info directly
+    try:
+        api = HfApi()
+        commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
+        if commits:
+            st.write("Latest commit found:")
+            st.write(f"- Hash: {commits[0].commit_id}")
+            st.write(f"- Date: {commits[0].created_at}")
+            st.write(f"- Author: {commits[0].author}")
+            st.write(f"- Message: {commits[0].title}")
+        else:
+            st.write("No commits found")
+    except Exception as e:
+        st.write(f"Error getting commits: {str(e)}")
+    
+    # Rest of your existing model info display...
     st.markdown(
         f"""
         <div style='
@@ -228,9 +248,6 @@ def display_model_info(model_info):
                         Model Version
                     </h3>
                     <div style='
-                        display: flex;
-                        align-items: center;
-                        gap: 0.5rem;
                         background: rgba(255, 255, 255, 0.1);
                         padding: 0.5rem;
                         border-radius: 0.25rem;
@@ -245,44 +262,19 @@ def display_model_info(model_info):
                         Last Updated
                     </h3>
                     <div style='
-                        display: flex;
-                        align-items: center;
-                        gap: 0.5rem;
                         background: rgba(255, 255, 255, 0.1);
                         padding: 0.5rem;
                         border-radius: 0.25rem;
                     '>
                         <span style='color: #ffffff;'>
-                            {getattr(model_info, 'model_timestamp', datetime.now(timezone(timedelta(hours=1))).strftime('%Y-%m-%d %H:%M:%S'))}
+                            {getattr(model_info, 'model_timestamp', 'Unknown')}
                         </span>
                     </div>
                 </div>
             </div>
-            <div style='
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-                padding-top: 0.75rem;
-            '>
-                <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
-                    Version Details
-                </h3>
-                <div style='
-                    background: rgba(255, 255, 255, 0.1);
-                    padding: 0.75rem;
-                    border-radius: 0.25rem;
-                '>
-                    <div style='color: #ffffff;'>
-                        <div style='font-size: 0.9rem; color: #a0aec0; margin-bottom: 0.25rem;'>
-                            {getattr(model_info, 'version_notes', 'Sentiment Analysis Model - Initial Release')}
-                        </div>
-                        <div style='font-size: 0.8rem; margin-top: 0.25rem;'>
-                            by <span style='color: #4299e1;'>{getattr(model_info, 'model_author', 'AI Team')}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
-        """,
-        unsafe_allow_html=True
+        """
+        , unsafe_allow_html=True
     )
     
     # Create tabs for different categories of information
