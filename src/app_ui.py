@@ -212,7 +212,7 @@ def display_model_info(model_info):
     st.markdown("## Model Information")
     
     # Get GitHub commit info
-    github_info = get_github_last_commit('diegogerwig', '42_LLM_sentiment_analysis')  # Usando los mismos valores que en HF
+    github_info = get_github_last_commit('diegogerwig', '42_LLM_sentiment_analysis')
     
     # Main model info display
     st.markdown(
@@ -265,15 +265,15 @@ def display_model_info(model_info):
                 padding-top: 0.75rem;
                 margin-top: 0.75rem;
             '>
-                <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
-                    App Version (GitHub)
-                </h3>
-                <div style='
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 1rem;
-                '>
-                    <div>
+                <div>
+                    <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
+                        App Version (GitHub)
+                    </h3>
+                    <div style='
+                        display: grid;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 1rem;
+                    '>
                         <div style='
                             background: rgba(255, 255, 255, 0.1);
                             padding: 0.5rem;
@@ -283,8 +283,6 @@ def display_model_info(model_info):
                                 {github_info['hash'] if github_info else 'Unknown'}
                             </span>
                         </div>
-                    </div>
-                    <div>
                         <div style='
                             background: rgba(255, 255, 255, 0.1);
                             padding: 0.5rem;
