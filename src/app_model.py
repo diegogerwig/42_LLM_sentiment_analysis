@@ -5,46 +5,38 @@ import streamlit as st
 import os
 from datetime import datetime
 from app_config import LOCAL_MODEL_PATH, HF_MODEL_PATH, MAX_LENGTH
+from huggingface_hub import hf_hub_url, model_info
 
-import os
-from datetime import datetime
-
-from huggingface_hub import hf_hub_download, model_info
-
-def get_safetensors_last_modified(repo_id):
+def get_last_commit_date(repo_id):
     """
-    Gets the last modified date of model.safetensors from a Hugging Face repo
+    Gets the last commit date from a Hugging Face repo
     
     Args:
         repo_id (str): The repository ID (e.g., "runwayml/stable-diffusion-v1-5")
     """
     try:
-        # Get model info
+        # Get model info which includes the lastModified date
         info = model_info(repo_id)
         
-        # Find the model.safetensors file in the sibling files
-        for file in info.siblings:
-            if file.rfilename == "model.safetensors":
-                return file.lastModified
+        # The lastModified attribute contains the last commit date
+        last_modified = info.lastModified
         
+        # Convert to datetime for better readability
+        if last_modified:
+            date = datetime.fromtimestamp(last_modified)
+            return date
+            
         return None
         
     except Exception as e:
         print(f"Error accessing model info: {e}")
         return None
-    
-    print(f"Searching in directory: {model_path}")
-    for root, dirs, files in os.walk(model_path):
-        if "model.safetensors" in files:
-            file_path = os.path.join(root, "model.safetensors")
-            timestamp = os.path.getmtime(file_path)
-            date = datetime.fromtimestamp(timestamp)
-            print(f"File found at: {file_path}")
-            print(f"Modification date: {date}")
-            return timestamp
-    
-    print("model.safetensors file not found")
-    return None
+
+# Usage example:
+# repo_id = "runwayml/stable-diffusion-v1-5"
+# last_date = get_last_commit_date(repo_id)
+# if last_date:
+#     print(f"Last commit date: {last_date}")
 
 @st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
 def load_model():
@@ -58,7 +50,7 @@ def load_model():
             model_path = LOCAL_MODEL_PATH
             local_files = True
             # Get latest file modification timestamp
-            timestamp = get_model_safetensors_date(LOCAL_MODEL_PATH)
+            timestamp = get_last_commit_date(LOCAL_MODEL_PATH)
             if timestamp:
                 model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
             model_version = f"Local Model"
@@ -76,7 +68,7 @@ def load_model():
                     model_timestamp = datetime.fromtimestamp(hf_info.last_modified).strftime('%Y-%m-%d %H:%M:%S')
                 except:
                     # If HF timestamp fails, try to get from downloaded files
-                    timestamp = get_model_safetensors_date(model_path)
+                    timestamp = get_last_commit_date(model_path)
                     if timestamp:
                         model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
                     else:
