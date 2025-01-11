@@ -47,31 +47,42 @@ def load_model():
             model_path = LOCAL_MODEL_PATH
             local_files = True
             
-            # Get last commit info from HuggingFace
-            commit_info = get_last_commit_info(HF_MODEL_PATH)  # Using HF_MODEL_PATH as repo_id
+            # Get all commits and find the last model update
+            api = HfApi()
+            commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
             
-            if commit_info:
-                model_timestamp = commit_info['date']
-                model_version = f"Local Model (commit: {commit_info['hash'][:7]} by {commit_info['author']})"
-            else:
+            # Look for commits that mention model updates or model.safetensors
+            for commit in commits:
+                if any(term in commit.title.lower() for term in ['model', 'weights', 'safetensors']):
+                    model_version = f"Local Model (commit: {commit.commit_id[:7]} by {commit.author})"
+                    model_timestamp = commit.created_at
+                    break
+            
+            if not model_timestamp:  # If no specific model commit found
                 model_version = "Local Model"
                 model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
         else:
-            from huggingface_hub import model_info
-            hf_info = model_info(HF_MODEL_PATH)
             model_path = HF_MODEL_PATH
             local_files = False
             
-            # Get commit info for cloud version
-            commit_info = get_last_commit_info(HF_MODEL_PATH)
-            if commit_info:
-                model_version = f"HuggingFace - {commit_info['hash'][:7]}"
-                model_timestamp = commit_info['date']
-            else:
-                model_version = f"HuggingFace - {hf_info.sha[:7]}"
-                model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            # Same commit search logic for cloud version
+            api = HfApi()
+            commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
             
+            for commit in commits:
+                if any(term in commit.title.lower() for term in ['model', 'weights', 'safetensors']):
+                    model_version = f"HuggingFace - {commit.commit_id[:7]}"
+                    model_timestamp = commit.created_at
+                    break
+            
+            if not model_timestamp:
+                model_version = f"HuggingFace - latest"
+                model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
         print(f"Loading model from: {model_path}")
+        print(f"Model version: {model_version}")
+        print(f"Model timestamp: {model_timestamp}")
         
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
