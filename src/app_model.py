@@ -5,38 +5,35 @@ import streamlit as st
 import os
 from datetime import datetime
 from app_config import LOCAL_MODEL_PATH, HF_MODEL_PATH, MAX_LENGTH
-from huggingface_hub import hf_hub_url, model_info
+from huggingface_hub import hf_hub_url, model_info, HfApi
 
-def get_last_commit_date(repo_id):
+def get_last_commit_info(repo_id):
     """
-    Gets the last commit date from a Hugging Face repo
+    Gets the last commit information from a Hugging Face repo
     
     Args:
-        repo_id (str): The repository ID (e.g., "runwayml/stable-diffusion-v1-5")
+        repo_id (str): The repository ID
+    Returns:
+        dict: Commit information including hash, date, author and message
     """
     try:
-        # Get model info which includes the lastModified date
-        info = model_info(repo_id)
+        api = HfApi()
+        commits = api.list_repo_commits(repo_id=repo_id)
         
-        # The lastModified attribute contains the last commit date
-        last_modified = info.lastModified
-        
-        # Convert to datetime for better readability
-        if last_modified:
-            date = datetime.fromtimestamp(last_modified)
-            return date
-            
+        # Get the latest commit (first in the list)
+        if commits:
+            last_commit = commits[0]
+            return {
+                'hash': last_commit.commit_id,
+                'date': last_commit.created_at,
+                'author': last_commit.author,
+                'message': last_commit.title
+            }
         return None
         
     except Exception as e:
-        print(f"Error accessing model info: {e}")
+        print(f"Error accessing commit history: {e}")
         return None
-
-# Usage example:
-# repo_id = "runwayml/stable-diffusion-v1-5"
-# last_date = get_last_commit_date(repo_id)
-# if last_date:
-#     print(f"Last commit date: {last_date}")
 
 @st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
 def load_model():
@@ -49,30 +46,30 @@ def load_model():
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
             local_files = True
-            # Get latest file modification timestamp
-            timestamp = get_last_commit_date(LOCAL_MODEL_PATH)
-            if timestamp:
-                model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-            model_version = f"Local Model"
+            
+            # Get last commit info from HuggingFace
+            commit_info = get_last_commit_info(HF_MODEL_PATH)  # Using HF_MODEL_PATH as repo_id
+            
+            if commit_info:
+                model_timestamp = commit_info['date']
+                model_version = f"Local Model (commit: {commit_info['hash'][:7]} by {commit_info['author']})"
+            else:
+                model_version = "Local Model"
+                model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         else:
             from huggingface_hub import model_info
             hf_info = model_info(HF_MODEL_PATH)
             model_path = HF_MODEL_PATH
             local_files = False
-            # Get HuggingFace model version
-            model_version = f"HuggingFace - {hf_info.sha[:7]}"
             
-            # Try to get the last modified date from the model info
-            if hasattr(hf_info, 'last_modified'):
-                try:
-                    model_timestamp = datetime.fromtimestamp(hf_info.last_modified).strftime('%Y-%m-%d %H:%M:%S')
-                except:
-                    # If HF timestamp fails, try to get from downloaded files
-                    timestamp = get_last_commit_date(model_path)
-                    if timestamp:
-                        model_timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-                    else:
-                        model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            # Get commit info for cloud version
+            commit_info = get_last_commit_info(HF_MODEL_PATH)
+            if commit_info:
+                model_version = f"HuggingFace - {commit_info['hash'][:7]}"
+                model_timestamp = commit_info['date']
+            else:
+                model_version = f"HuggingFace - {hf_info.sha[:7]}"
+                model_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
         print(f"Loading model from: {model_path}")
         
