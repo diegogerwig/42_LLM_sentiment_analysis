@@ -32,26 +32,23 @@ def get_last_commit_info(repo_id):
 
 @st.cache_resource(ttl=600)  # 600 seconds = 10 minutes
 def load_model():
-    """Loads the model and tokenizer"""
+    """Loads the model and tokenizer with proper commit information"""
     try:
         is_cloud = os.getenv('STREAMLIT_RUNTIME_ENV') == 'cloud'
 
-        # Get commit information
-        api = HfApi()
-        try:
-            # Get just the latest commit
-            last_commit = api.list_repo_commits(repo_id=HF_MODEL_PATH, max_results=1)[0]
-            model_version = f"{last_commit.commit_id[:7]}"
-            
-            # Convert UTC to UTC+1
-            commit_date = datetime.fromisoformat(last_commit.created_at.replace('Z', '+00:00'))
-            local_date = commit_date + timedelta(hours=1)
-            model_timestamp = local_date.strftime('%Y-%m-%d %H:%M:%S')
-            
-        except Exception as e:
-            print(f"Error getting commit info: {str(e)}")
-            model_version = "Latest version"
-            model_timestamp = (datetime.now() + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+        # Get HuggingFace commit information
+        hf_commit_info = get_last_commit_info(HF_MODEL_PATH)
+        
+        if hf_commit_info:
+            model_version = f"{hf_commit_info['hash'][:7]}"
+            model_timestamp = hf_commit_info['date'].strftime('%Y-%m-%d %H:%M:%S')
+            commit_author = hf_commit_info['author']
+            commit_message = hf_commit_info['message']
+        else:
+            model_version = "Unknown"
+            model_timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            commit_author = "Unknown"
+            commit_message = "No commit message available"
 
         if not is_cloud and os.path.exists(LOCAL_MODEL_PATH):
             model_path = LOCAL_MODEL_PATH
@@ -74,9 +71,12 @@ def load_model():
             local_files_only=local_files
         )
         
-        # Store version info directly in the model config
+        # Store detailed version info in model config
         model.config.model_version = model_version
         model.config.model_timestamp = model_timestamp
+        model.config.commit_author = commit_author
+        model.config.commit_message = commit_message
+        model.config.commit_hash = hf_commit_info['hash'] if hf_commit_info else "Unknown"
         
         return model, tokenizer
 
@@ -87,19 +87,16 @@ def load_model():
 def get_model_info(model, tokenizer):
     """Gets comprehensive information about the model and tokenizer including commit info"""
     try:
-        # Get HuggingFace commit information
-        hf_commit_info = get_last_commit_info(HF_MODEL_PATH)
-        
         model_info = {
-            # Version Information
+            # Version Information from model config
             "Model Version": getattr(model.config, "model_version", "Unknown"),
             "Last Updated": getattr(model.config, "model_timestamp", "Unknown"),
             
-            # Commit Information from Hugging Face
-            "hf_commit_hash": hf_commit_info['hash'][:7] if hf_commit_info else "N/A",
-            "hf_commit_message": hf_commit_info['message'] if hf_commit_info else "No commit message",
-            "hf_commit_author": hf_commit_info['author'] if hf_commit_info else "Unknown",
-            "hf_commit_date": hf_commit_info['date'].strftime('%Y-%m-%d %H:%M:%S') if hf_commit_info else "Unknown",
+            # Commit Information from model config
+            "hf_commit_hash": getattr(model.config, "commit_hash", "Unknown")[:7],
+            "hf_commit_message": getattr(model.config, "commit_message", "No commit message available"),
+            "hf_commit_author": getattr(model.config, "commit_author", "Unknown"),
+            "hf_last_updated": getattr(model.config, "model_timestamp", "Unknown"),
             
             # Architecture Information
             "Model Type": model.config.model_type,

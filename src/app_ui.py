@@ -204,10 +204,10 @@ def display_influence_analysis(token_data):
             )
 
 def display_model_info(model_info):
-    """Displays detailed model information with Git and HF commit details"""
+    """Displays detailed model information with commit details"""
     st.markdown("## Model Information")
     
-    # Enhanced version info display with Git and HF commit information
+    # Enhanced version info display with commit information
     st.markdown(
         f"""
         <div style='
@@ -235,8 +235,8 @@ def display_model_info(model_info):
                         padding: 0.5rem;
                         border-radius: 0.25rem;
                     '>
-                        <span style='color: #ffffff; font-weight: 500;'>
-                            {model_info['Model Version']}
+                        <span style='color: #ffffff; font-family: monospace;'>
+                            {model_info['hf_commit_hash']}
                         </span>
                     </div>
                 </div>
@@ -252,8 +252,8 @@ def display_model_info(model_info):
                         padding: 0.5rem;
                         border-radius: 0.25rem;
                     '>
-                        <span style='color: #ffffff; font-weight: 500;'>
-                            {model_info['Last Updated']}
+                        <span style='color: #ffffff;'>
+                            {model_info['hf_last_updated']}
                         </span>
                     </div>
                 </div>
@@ -263,43 +263,19 @@ def display_model_info(model_info):
                 padding-top: 0.75rem;
             '>
                 <h3 style='color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.5rem;'>
-                    Latest Commits
+                    Latest Commit Details
                 </h3>
                 <div style='
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 1rem;
+                    background: rgba(255, 255, 255, 0.1);
+                    padding: 0.75rem;
+                    border-radius: 0.25rem;
                 '>
-                    <div style='
-                        background: rgba(255, 255, 255, 0.1);
-                        padding: 0.5rem;
-                        border-radius: 0.25rem;
-                    '>
-                        <div style='color: #a0aec0; font-size: 0.8rem;'>Hugging Face</div>
-                        <div style='color: #ffffff; margin-top: 0.25rem;'>
-                            <div style='font-family: monospace;'>{model_info.get('hf_commit_hash', 'N/A')}</div>
-                            <div style='font-size: 0.8rem; color: #a0aec0;'>
-                                {model_info.get('hf_commit_message', 'No commit message')}
-                            </div>
-                            <div style='font-size: 0.8rem; margin-top: 0.25rem;'>
-                                by {model_info.get('hf_commit_author', 'Unknown')}
-                            </div>
+                    <div style='color: #ffffff;'>
+                        <div style='font-size: 0.9rem; color: #a0aec0; margin-bottom: 0.25rem;'>
+                            {model_info['hf_commit_message']}
                         </div>
-                    </div>
-                    <div style='
-                        background: rgba(255, 255, 255, 0.1);
-                        padding: 0.5rem;
-                        border-radius: 0.25rem;
-                    '>
-                        <div style='color: #a0aec0; font-size: 0.8rem;'>Git Repository</div>
-                        <div style='color: #ffffff; margin-top: 0.25rem;'>
-                            <div style='font-family: monospace;'>{model_info.get('git_commit_hash', 'N/A')}</div>
-                            <div style='font-size: 0.8rem; color: #a0aec0;'>
-                                {model_info.get('git_commit_message', 'No commit message')}
-                            </div>
-                            <div style='font-size: 0.8rem; margin-top: 0.25rem;'>
-                                by {model_info.get('git_commit_author', 'Unknown')}
-                            </div>
+                        <div style='font-size: 0.8rem; margin-top: 0.25rem;'>
+                            by <span style='color: #4299e1;'>{model_info['hf_commit_author']}</span>
                         </div>
                     </div>
                 </div>
