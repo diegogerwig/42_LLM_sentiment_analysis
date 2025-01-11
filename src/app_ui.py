@@ -210,18 +210,18 @@ def display_model_info(model_info):
     """Displays model information with debug info"""
     st.markdown("## Model Information")
     
-    # Add debug information in a collapsible section
-    with st.expander("Debug Information"):
-        st.write(f"HF_MODEL_PATH: {HF_MODEL_PATH}")
-        try:
-            api = HfApi()
-            commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
-            if commits:
-                st.write("Latest commit found:")
-                st.write(f"- Hash: {commits[0].commit_id}")
-                st.write(f"- Date: {commits[0].created_at}")
-        except Exception as e:
-            st.write(f"Error getting commits: {str(e)}")
+    # # Add debug information in a collapsible section
+    # with st.expander("Debug Information"):
+    #     st.write(f"HF_MODEL_PATH: {HF_MODEL_PATH}")
+    #     try:
+    #         api = HfApi()
+    #         commits = api.list_repo_commits(repo_id=HF_MODEL_PATH)
+    #         if commits:
+    #             st.write("Latest commit found:")
+    #             st.write(f"- Hash: {commits[0].commit_id}")
+    #             st.write(f"- Date: {commits[0].created_at}")
+    #     except Exception as e:
+    #         st.write(f"Error getting commits: {str(e)}")
     
     # Main model info display
     st.markdown(
