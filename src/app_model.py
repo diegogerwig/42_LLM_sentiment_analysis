@@ -57,8 +57,9 @@ def load_model():
             last_commit = commits[0]
             model_version = last_commit.commit_id[:7]
             
-            # Convert commit date from UTC to UTC+1
-            commit_date = datetime.fromisoformat(last_commit.created_at)
+            # Convert commit date to UTC+1
+            # The created_at is already a datetime object, no need to parse
+            commit_date = last_commit.created_at
             tz = timezone(timedelta(hours=1))
             local_date = commit_date.astimezone(tz)
             model_timestamp = local_date.strftime('%Y-%m-%d %H:%M:%S')
